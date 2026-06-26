@@ -1,839 +1,993 @@
 import { useState } from "react";
 
-const SLIDES = [
-  {
-    id: "salon",    num: "01", tag: "קיר הסלון",
-    title: "פתוח לשדה",
-    desc: "קיר-זכוכית שלם על כל רוחב הסלון. כשהפאנלים נפתחים — הסלון והטרסה הופכים לחלל אחד. נוף השדות נכנס פנימה.",
-    points: ["6 פאנלי הזזה — כל הרוחב","המשכיות רצפה ללא מפתן","קורות עץ חשופות בתקרה","נוף שדות ישיר ללא הפרעה"],
-    Scene: SalonScene,
-  },
-  {
-    id: "entry",    num: "02", tag: "כניסה",
-    title: "אור לגובה שתי קומות",
-    desc: "לצד גרם המדרגות — חלון רצף מהרצפה עד גג הגמלון. האור שוטף פנימה בכל שעות היום. כניסה שמרגישה כמו כניסה לדבר גדול.",
-    points: ["חלון ~6 מ׳ גובה לצד המדרגות","חלל כניסה פתוח לגובה שתי קומות","קיר אבן חם לצד — חומרים טוסקניים","אור טבעי על כל גרם המדרגות"],
-    Scene: EntryScene,
-  },
-  {
-    id: "west",     num: "03", tag: "חזית השדות",
-    title: "זכוכית מול הנוף",
-    desc: "מבחוץ — הבית נפתח לשדות בשורה שלמה של זכוכית. קורות עץ בולטות בקו הגג. אבן מקומית בפינות.",
-    points: ["זכוכית על כל רוחב קומת הקרקע","קורות עץ חשופות בקו הגג","אבן מקומית בפינות ובסיס","טרסה רחבה — המשך הסלון החוצה"],
-    Scene: WestScene,
-  },
-  {
-    id: "tuscan",   num: "04", tag: "שפה אדריכלית",
-    title: "טוסקנה אחידה",
-    desc: "האבן, הקשתות, קורות העץ — מהכניסה מתפשטים לכל ארבע החזיתות. הבית מספר סיפור אחד.",
-    points: ["אבן מקומית בפינות ורצועות","חלונות קשתות בקומת קרקע","תריסי עץ על כל החלונות","גפנים וצמחייה שמחברת לאדמה"],
-    Scene: TuscanScene,
-  },
-  {
-    id: "upper",    num: "05", tag: "קומה עליונה",
-    title: "אגפים ואופי",
-    desc: "הורים בקצה אחד, ילדים בקצה השני. למסדרון — סקיילייט. לכל חדר משהו ייחודי משלו.",
-    points: ["סקיילייט מעל המסדרון","אגף הורים: עין-סוויט + מרפסת לשדות","חדרי ילדים שווים: מושב חלון / מרפסת / פינת קריאה","תקרה משופעת עם קורות עץ חשופות"],
-    Scene: UpperScene,
-  },
-];
-
-// ── Shared palette ───────────────────────────────────────────────────────────
-const P = {
-  sky1: "#7EC8E3", sky2: "#C8E8F5", sky3: "#E8F5FF",
-  green1: "#3A7A30", green2: "#5A9E4E", green3: "#8AC87A",
-  stone1: "#A09080", stone2: "#B8A898", stone3: "#CEC0B0",
-  wood1: "#5A3010", wood2: "#7A4F2B", wood3: "#A07040",
-  plaster: "#F5EDE0", plasterDark: "#E0D0BC",
-  glass: "#C8E8F8", glassShine: "#EAF6FF",
-  floor1: "#C8955A", floor2: "#A06838",
-  terracotta: "#B5472A", cream: "#FAF5EE",
-  dark: "#1A0E06",
-};
-
-function Label({ x, y, text, w = 160, accent = P.terracotta }) {
+/* ══════════════════════════════════════════════════════════════════════════
+   SHARED FILTER / GRADIENT DEFS — injected into each SVG
+══════════════════════════════════════════════════════════════════════════ */
+function Defs() {
   return (
-    <g>
-      <rect x={x - w/2} y={y - 11} width={w} height={18} rx={5} fill={accent} fillOpacity={0.92} />
-      <text x={x} y={y + 2} textAnchor="middle" fill="white" fontSize="10.5" fontWeight="700"
-        fontFamily="'Heebo',Arial,sans-serif">{text}</text>
-    </g>
+    <defs>
+      {/* ── Sky ── */}
+      <linearGradient id="gSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stopColor="#1A5C96"/>
+        <stop offset="38%"  stopColor="#3A8FC8"/>
+        <stop offset="65%"  stopColor="#78BDE0"/>
+        <stop offset="82%"  stopColor="#B8DCF0"/>
+        <stop offset="93%"  stopColor="#D8EDF5"/>
+        <stop offset="100%" stopColor="#E5F0DC"/>
+      </linearGradient>
+      <radialGradient id="gSun" cx="78%" cy="18%" r="45%">
+        <stop offset="0%"   stopColor="#FFFAE0" stopOpacity="0.95"/>
+        <stop offset="25%"  stopColor="#FFE090" stopOpacity="0.45"/>
+        <stop offset="100%" stopColor="#78BDE0" stopOpacity="0"/>
+      </radialGradient>
+      {/* ── Stone wall ── */}
+      <filter id="fStone" x="-2%" y="-2%" width="104%" height="104%" colorInterpolationFilters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.038 0.065" numOctaves="5" seed="7" result="nz"/>
+        <feDiffuseLighting in="nz" lightingColor="#E8D8B8" surfaceScale="4" result="lit">
+          <feDistantLight azimuth="315" elevation="52"/>
+        </feDiffuseLighting>
+        <feBlend in="SourceGraphic" in2="lit" mode="multiply" result="out"/>
+        <feComponentTransfer in="out">
+          <feFuncR type="linear" slope="1.05" intercept="-0.02"/>
+          <feFuncG type="linear" slope="0.98"/>
+          <feFuncB type="linear" slope="0.92"/>
+        </feComponentTransfer>
+      </filter>
+      {/* ── Wood grain ── */}
+      <filter id="fWood" x="-2%" y="-2%" width="104%" height="104%" colorInterpolationFilters="sRGB">
+        <feTurbulence type="turbulence" baseFrequency="0.006 0.45" numOctaves="3" seed="4" result="nz"/>
+        <feDiffuseLighting in="nz" lightingColor="#E0B870" surfaceScale="2.5" result="lit">
+          <feDistantLight azimuth="300" elevation="65"/>
+        </feDiffuseLighting>
+        <feBlend in="SourceGraphic" in2="lit" mode="multiply"/>
+      </filter>
+      {/* ── Soft ground shadow ── */}
+      <filter id="fShadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="9" in="SourceAlpha" result="b"/>
+        <feFlood floodColor="rgba(30,15,5,0.55)" result="c"/>
+        <feComposite in="c" in2="b" operator="in" result="shadow"/>
+        <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      {/* ── Depth haze ── */}
+      <filter id="fHaze">
+        <feColorMatrix type="matrix"
+          values="0.72 0 0 0 0.18  0 0.75 0 0 0.22  0 0 0.8 0 0.32  0 0 0 0.7 0"/>
+      </filter>
+      {/* ── Glass ── */}
+      <linearGradient id="gGlass" x1="0.1" y1="0" x2="0.9" y2="1">
+        <stop offset="0%"   stopColor="#C0DCF0" stopOpacity="0.92"/>
+        <stop offset="25%"  stopColor="#D8EEF8" stopOpacity="0.82"/>
+        <stop offset="55%"  stopColor="#EEF8FF" stopOpacity="0.72"/>
+        <stop offset="100%" stopColor="#D0E8D0" stopOpacity="0.85"/>
+      </linearGradient>
+      <linearGradient id="gGlassShine" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%"   stopColor="white" stopOpacity="0.55"/>
+        <stop offset="35%"  stopColor="white" stopOpacity="0.08"/>
+        <stop offset="100%" stopColor="white" stopOpacity="0.12"/>
+      </linearGradient>
+      {/* ── Interior warm light ── */}
+      <radialGradient id="gWarm" cx="50%" cy="38%" r="65%">
+        <stop offset="0%"   stopColor="#FFF6D0"/>
+        <stop offset="55%"  stopColor="#EAC870"/>
+        <stop offset="100%" stopColor="#8A5828"/>
+      </radialGradient>
+      {/* ── Terracotta roof ── */}
+      <linearGradient id="gRoof" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stopColor="#B84030"/>
+        <stop offset="45%"  stopColor="#9A3020"/>
+        <stop offset="100%" stopColor="#6A1E10"/>
+      </linearGradient>
+      <filter id="fRoof" x="-2%" y="-2%" width="104%" height="104%" colorInterpolationFilters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.06 0.25" numOctaves="3" seed="2" result="nz"/>
+        <feDiffuseLighting in="nz" lightingColor="#E89070" surfaceScale="3" result="lit">
+          <feDistantLight azimuth="315" elevation="55"/>
+        </feDiffuseLighting>
+        <feBlend in="SourceGraphic" in2="lit" mode="multiply"/>
+      </filter>
+      {/* ── Stone floor (interior) ── */}
+      <filter id="fFloor" x="-2%" y="-2%" width="104%" height="104%" colorInterpolationFilters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.05 0.05" numOctaves="4" seed="11" result="nz"/>
+        <feDiffuseLighting in="nz" lightingColor="#F0D8A8" surfaceScale="2" result="lit">
+          <feDistantLight azimuth="330" elevation="70"/>
+        </feDiffuseLighting>
+        <feBlend in="SourceGraphic" in2="lit" mode="overlay"/>
+      </filter>
+      {/* ── Wall lighting overlay ── */}
+      <linearGradient id="gWallLit" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%"   stopColor="rgba(20,10,2,0.22)"/>
+        <stop offset="25%"  stopColor="rgba(0,0,0,0)"/>
+        <stop offset="78%"  stopColor="rgba(255,220,150,0.07)"/>
+        <stop offset="100%" stopColor="rgba(255,220,150,0.18)"/>
+      </linearGradient>
+      <linearGradient id="gWallTop" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stopColor="rgba(255,245,200,0.14)"/>
+        <stop offset="35%"  stopColor="rgba(0,0,0,0)"/>
+        <stop offset="100%" stopColor="rgba(15,8,2,0.28)"/>
+      </linearGradient>
+      {/* ── Ground / paving ── */}
+      <linearGradient id="gGround" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stopColor="#C8B898"/>
+        <stop offset="100%" stopColor="#A89878"/>
+      </linearGradient>
+      {/* ── Plaster wall ── */}
+      <linearGradient id="gPlaster" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stopColor="#F2E8D8"/>
+        <stop offset="100%" stopColor="#DDD0BA"/>
+      </linearGradient>
+      {/* ── Staircase light ── */}
+      <radialGradient id="gStairLight" cx="25%" cy="20%" r="55%">
+        <stop offset="0%"   stopColor="#FFF8E0" stopOpacity="0.95"/>
+        <stop offset="40%"  stopColor="#F0D890" stopOpacity="0.6"/>
+        <stop offset="100%" stopColor="#8A6030" stopOpacity="0"/>
+      </radialGradient>
+      {/* ── Vine leaf pattern ── */}
+      <pattern id="pVine" x="0" y="0" width="36" height="52" patternUnits="userSpaceOnUse">
+        <ellipse cx="18" cy="13" rx="11" ry="7" fill="#2A7218" transform="rotate(-35,18,13)" opacity="0.82"/>
+        <ellipse cx="8"  cy="30" rx="9"  ry="6" fill="#388228" transform="rotate(22,8,30)"  opacity="0.75"/>
+        <ellipse cx="26" cy="42" rx="10" ry="6" fill="#3A9A2A" transform="rotate(-12,26,42)" opacity="0.78"/>
+        <path d="M18,0 Q16,18 18,52" stroke="#2E5C18" strokeWidth="1.5" fill="none" opacity="0.55"/>
+      </pattern>
+      {/* ── Cypress tree clip path ── */}
+      <clipPath id="clipSky"><rect width="900" height="540"/></clipPath>
+    </defs>
   );
 }
 
-// ── Scene 1: Salon interior ──────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   SCENE 1 — SALON: Full glass wall opens to Tuscan fields
+══════════════════════════════════════════════════════════════════════════ */
 function SalonScene() {
-  const vx = 450, vy = 220;   // vanishing point
-  const W = 900, H = 580;
+  /* One-point perspective: VP at (450, 268)
+     Near opening: x 0..900, y 0..540
+     Far glass wall: x 195..705, y 108..428  */
+  const vx = 450, vy = 268;
+  const fl = 195, fr = 705, ft = 108, fb = 428; // far wall bounds
 
-  // Glass wall back-rect corners
-  const glL = 148, glR = 752, glT = 92, glB = 420;
-
-  function toVP(px, py, t) {  // t=0→wall, t=1→vp
-    return [px + (vx - px)*t, py + (vy - py)*t];
-  }
-
-  // beams — ceiling lines from front corners to VP
-  const beamFront = [0, 135, 270, 405, 540, 675, W];
-  const beams = beamFront.map(bx => {
-    const [bxVP] = toVP(bx, 0, 0.5);
-    return { x1: bx, y1: 0, x2: Math.round(bxVP), y2: glT };
-  });
+  // helper: perspective line from near-edge to vanishing point clipped
+  const panels = [fl, fl+87, fl+174, fl+261, fl+348, fl+435, fr]; // 6 panels
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ display:"block", width:"100%", height:"auto" }}>
-      <defs>
-        <linearGradient id="sky_s" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={P.sky1} /><stop offset="55%" stopColor={P.sky2} /><stop offset="100%" stopColor="#B8D8A0" />
-        </linearGradient>
-        <linearGradient id="grass_s" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={P.green2} /><stop offset="100%" stopColor={P.green1} />
-        </linearGradient>
-        <linearGradient id="floor_s" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={P.floor1} /><stop offset="100%" stopColor={P.floor2} />
-        </linearGradient>
-        <linearGradient id="lwallGrad" x1="1" y1="0" x2="0" y2="0">
-          <stop offset="0%" stopColor={P.plaster} /><stop offset="100%" stopColor={P.plasterDark} />
-        </linearGradient>
-        <linearGradient id="rwallGrad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor={P.plaster} /><stop offset="100%" stopColor={P.plasterDark} />
-        </linearGradient>
-        <linearGradient id="sunBeam" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#FFFBE0" stopOpacity="0.45" /><stop offset="100%" stopColor="#FFFBE0" stopOpacity="0" />
-        </linearGradient>
-        <clipPath id="glassClip"><rect x={glL} y={glT} width={glR-glL} height={glB-glT} /></clipPath>
-      </defs>
+    <svg viewBox="0 0 900 540" xmlns="http://www.w3.org/2000/svg" style={{width:"100%",height:"100%",display:"block"}}>
+      <Defs/>
 
-      {/* ── BACKGROUND through glass ── */}
-      <rect x={glL} y={glT} width={glR-glL} height={glB-glT} fill="url(#sky_s)" />
-      {/* Hills */}
-      <path d={`M${glL},${glB-60} Q${glL+80},${glB-110} ${glL+200},${glB-80} Q${glL+320},${glB-50} ${glL+440},${glB-90} Q${glL+550},${glB-120} ${glR},${glB-70} L${glR},${glB} L${glL},${glB} Z`}
-        fill="url(#grass_s)" />
-      <path d={`M${glL},${glB-30} Q${glL+150},${glB-70} ${glL+300},${glB-40} Q${glL+480},${glB-10} ${glR},${glB-35} L${glR},${glB} L${glL},${glB} Z`}
-        fill={P.green1} />
-      {/* Trees */}
-      {[185,260,340,540,620,700].map((tx,i) => (
-        <g key={i} clipPath="url(#glassClip)">
-          <rect x={tx-3} y={glB-130-(i%3)*20} width={6} height={80+(i%3)*20} fill={P.green1} />
-          <ellipse cx={tx} cy={glB-135-(i%3)*20} rx={18+(i%2)*8} ry={24+(i%3)*6} fill={P.green2} />
-        </g>
-      ))}
-      {/* Cypress trees */}
-      {[410,435,460,485].map((tx,i)=>(
-        <ellipse key={i} cx={tx} cy={glB-100} rx={7} ry={28} fill={P.green1} fillOpacity="0.75" clipPath="url(#glassClip)" />
-      ))}
-      {/* Sun */}
-      <circle cx="700" cy="110" r="30" fill="#FFF088" fillOpacity="0.75" clipPath="url(#glassClip)" />
-
-      {/* ── ROOM STRUCTURE ── */}
-      {/* Ceiling */}
-      <polygon points={`0,0 ${W},0 ${glR},${glT} ${glL},${glT}`} fill={P.wood1} />
-      {/* Left wall */}
-      <polygon points={`0,0 ${glL},${glT} ${glL},${glB} 0,${H}`} fill="url(#lwallGrad)" />
-      {/* Right wall */}
-      <polygon points={`${W},0 ${glR},${glT} ${glR},${glB} ${W},${H}`} fill="url(#rwallGrad)" />
-      {/* Floor */}
-      <polygon points={`${glL},${glB} ${glR},${glB} ${W},${H} 0,${H}`} fill="url(#floor_s)" />
-
-      {/* Floor tile lines — towards VP */}
-      {[0.15,0.3,0.45,0.6,0.75,0.9].map((t,i)=>{
-        const flX = glL + t*(glR-glL);
-        const [fpx] = toVP(t*W, H, 0);
-        return <line key={i} x1={flX} y1={glB} x2={t<0.5?0:W} y2={H} stroke={P.floor2} strokeWidth="0.8" strokeOpacity="0.35" />;
-      })}
-      {[0.25,0.5,0.75].map((t,i)=>(
-        <line key={i} x1={glL-(glL*t)} y1={glB+t*(H-glB)} x2={glR+(W-glR)*t} y2={glB+t*(H-glB)} stroke={P.floor2} strokeWidth="0.7" strokeOpacity="0.3" />
-      ))}
-
-      {/* Ceiling beams */}
-      {[0.12,0.26,0.4,0.54,0.68,0.82].map((t,i)=>{
-        const fx = t*W, bx = glL + t*(glR-glL);
-        return (
-          <g key={i}>
-            <polygon points={`${fx-14},0 ${fx+14},0 ${bx+8},${glT} ${bx-8},${glT}`} fill={P.wood2} />
-            <polygon points={`${fx-14},0 ${fx+14},0 ${fx+14},9 ${fx-14},9`} fill={P.wood3} fillOpacity="0.6" />
-          </g>
-        );
-      })}
-
-      {/* ── GLASS WALL ── */}
-      {/* Top/bottom frames */}
-      <rect x={glL-4} y={glT-5} width={glR-glL+8} height={8} rx={2} fill={P.dark} />
-      <rect x={glL-4} y={glB-3} width={glR-glL+8} height={8} rx={2} fill={P.dark} />
-      {/* 6 panels */}
-      {Array.from({length:6}).map((_,i)=>{
-        const pw = (glR-glL)/6, px = glL + i*pw;
-        return (
-          <g key={i}>
-            <rect x={px} y={glT} width={4} height={glB-glT} fill={P.dark} />
-            <rect x={px+4} y={glT+2} width={pw-8} height={(glB-glT)-4} fill={P.glass} fillOpacity="0.12" />
-            <line x1={px+18} y1={glT+4} x2={px+pw-12} y2={glB-4} stroke="white" strokeWidth="1.5" strokeOpacity="0.18" />
-          </g>
-        );
-      })}
-      <rect x={glR-4} y={glT} width={4} height={glB-glT} fill={P.dark} />
-
-      {/* Pergola shadow top */}
-      <rect x={glL} y={glT} width={glR-glL} height={28} fill={P.dark} fillOpacity="0.22" />
-
-      {/* Sun rays on floor */}
-      <polygon points={`${glL},${glB} ${glR},${glB} ${W},${H} 0,${H}`} fill="url(#sunBeam)" />
-
-      {/* ── SOFA ── */}
-      <g transform="translate(0,10)">
-        <path d={`M230,${H-110} Q230,${H-138} 250,${H-138} L650,${H-138} Q670,${H-138} 670,${H-110} L670,${H-75} L230,${H-75} Z`} fill="#8A6040" />
-        <rect x="230" y={H-152} width="440" height="22" rx="6" fill="#6A4020" />
-        {[0,1,2].map(i=>(
-          <rect key={i} x={240+i*145} y={H-136} width={135} height={55} rx="7" fill="#A07850" />
+      {/* ── Landscape visible through glass wall ── */}
+      <clipPath id="glassClip">
+        <rect x={fl} y={ft} width={fr-fl} height={fb-ft}/>
+      </clipPath>
+      <g clipPath="url(#glassClip)">
+        {/* Sky */}
+        <rect x={fl} y={ft} width={fr-fl} height={fb-ft} fill="url(#gSky)"/>
+        <rect x={fl} y={ft} width={fr-fl} height={fb-ft} fill="url(#gSun)"/>
+        {/* Distant hills */}
+        <ellipse cx="350" cy="285" rx="200" ry="60" fill="#6AAC52" filter="url(#fHaze)" opacity="0.7"/>
+        <ellipse cx="580" cy="292" rx="180" ry="55" fill="#58A040" filter="url(#fHaze)" opacity="0.65"/>
+        <ellipse cx="450" cy="310" rx="260" ry="50" fill="#7AC060" filter="url(#fHaze)" opacity="0.5"/>
+        {/* Horizon haze band */}
+        <rect x={fl} y="278" width={fr-fl} height="28" fill="rgba(190,220,240,0.55)"/>
+        {/* Cypress trees silhouette */}
+        {[230,280,620,670].map((x,i)=>(
+          <ellipse key={i} cx={x} cy={270+(i%2)*12} rx={9+i%2*3} ry={38+i%2*8}
+            fill={i%2===0?"#1E5818":"#266220"} filter="url(#fHaze)" opacity={0.8-i*0.05}/>
         ))}
-        {[245,658].map((x,i)=><rect key={i} x={x} y={H-76} width={12} height={14} rx="2" fill="#3A1A06" />)}
+        {/* Fields / ground */}
+        <rect x={fl} y="326" width={fr-fl} height={fb-326} fill="#7AB848"/>
+        {/* Ground texture */}
+        <rect x={fl} y="326" width={fr-fl} height={fb-326} fill="#5A9830" opacity="0.4"/>
+        {/* Field rows */}
+        {[340,360,382,408,428].map((y,i)=>(
+          <line key={i} x1={fl} y1={y} x2={fr} y2={y} stroke="#4A8828" strokeWidth={1+i*0.3} opacity="0.4"/>
+        ))}
       </g>
 
+      {/* ── Room floor ── */}
+      <polygon points={`0,540 900,540 ${fr},${fb} ${fl},${fb}`}
+        fill="#C89860" filter="url(#fFloor)"/>
+      {/* Floor tile grid — perspective */}
+      {[0.18,0.35,0.52,0.68,0.82,0.93].map((t,i)=>{
+        const y = ft + (540-ft)*t + (fb-ft)*(1-t)*0;
+        const yy = fb + (540-fb)*t;
+        const xL = fl + (0-fl)*t;
+        const xR = fr + (900-fr)*t;
+        return <line key={i} x1={xL} y1={yy} x2={xR} y2={yy} stroke="rgba(120,80,40,0.35)" strokeWidth="1.2"/>;
+      })}
+      {/* Vertical tile lines in floor perspective */}
+      {[-2,-1,0,1,2,3,4,5,6,7].map((n,i)=>{
+        const nx = vx + n*90;
+        return <line key={i} x1={nx} y1={fb} x2={vx+(nx-vx)*4} y2={540}
+          stroke="rgba(120,80,40,0.25)" strokeWidth="0.8"/>;
+      })}
+      {/* Floor brightness toward glass wall */}
+      <polygon points={`${fl+60},${fb} ${fr-60},${fb} ${fr-30},${fb+30} ${fl+30},${fb+30}`}
+        fill="rgba(255,220,150,0.25)"/>
+
+      {/* ── Room ceiling ── */}
+      <polygon points={`0,0 900,0 ${fr},${ft} ${fl},${ft}`} fill="#E8DCC8"/>
+      {/* Ceiling shadow near walls */}
+      <polygon points={`0,0 900,0 ${fr},${ft} ${fl},${ft}`} fill="url(#gWallTop)" opacity="0.5"/>
+
+      {/* ── Exposed wood ceiling beams ── */}
+      {[-1,0,1,2,3].map((n,i)=>{
+        const bx = vx + n*140;
+        const nearL = bx - 22;
+        const nearR = bx + 22;
+        const farL = vx + (bx-22-vx)*((ft-0)/(ft-0)) ;
+        // beam recedes to VP
+        const farLx = vx + (nearL-vx)*(ft/0+0.05);
+        const farRx = vx + (nearR-vx)*(ft/0+0.05);
+        // approximate: at y=ft, beam is narrower
+        const scale = (ft)/(0+0.01); // avoid div0
+        const bfL = vx + (nearL-vx)*0.15;
+        const bfR = vx + (nearR-vx)*0.15;
+        return (
+          <g key={i}>
+            <polygon points={`${nearL},0 ${nearR},0 ${bfR},${ft} ${bfL},${ft}`}
+              fill="#5A3010" filter="url(#fWood)" opacity="0.92"/>
+            <polygon points={`${nearL},0 ${nearR},0 ${bfR},${ft} ${bfL},${ft}`}
+              fill="rgba(255,200,100,0.08)"/>
+          </g>
+        );
+      })}
+
+      {/* ── Left wall ── */}
+      <polygon points={`0,0 ${fl},${ft} ${fl},${fb} 0,540`} fill="#EAD8C0"/>
+      <polygon points={`0,0 ${fl},${ft} ${fl},${fb} 0,540`} fill="url(#gWallTop)" opacity="0.6"/>
+      {/* Stone accent strip on left wall */}
+      <polygon points={`0,0 45,0 ${fl},${ft} 0,0`} fill="#B8A080" filter="url(#fStone)" opacity="0.7"/>
+      <polygon points={`0,430 55,540 0,540`} fill="#B8A080" filter="url(#fStone)" opacity="0.5"/>
+
+      {/* ── Right wall ── */}
+      <polygon points={`900,0 ${fr},${ft} ${fr},${fb} 900,540`} fill="#E0CEB8"/>
+      <polygon points={`900,0 ${fr},${ft} ${fr},${fb} 900,540`} fill="url(#gWallTop)" opacity="0.6"/>
+      {/* Stone accent strip on right */}
+      <polygon points={`900,0 855,0 ${fr},${ft}`} fill="#B8A080" filter="url(#fStone)" opacity="0.7"/>
+
+      {/* ── Glass wall — structural frame ── */}
+      {/* Frame background dark reveal */}
+      <rect x={fl-8} y={ft-8} width={fr-fl+16} height={fb-ft+16} fill="#2A1A08" rx="2"/>
+      {/* Glass panels */}
+      {panels.slice(0,-1).map((px,i)=>(
+        <rect key={i} x={px+2} y={ft+2} width={panels[i+1]-px-4} height={fb-ft-4}
+          fill="url(#gGlass)" rx="1"/>
+      ))}
+      {/* Glass reflections */}
+      {panels.slice(0,-1).map((px,i)=>(
+        <rect key={i} x={px+2} y={ft+2} width={(panels[i+1]-px)*0.38} height={fb-ft-4}
+          fill="url(#gGlassShine)" rx="1" opacity="0.85"/>
+      ))}
+      {/* Frame verticals */}
+      {panels.map((px,i)=>(
+        <rect key={i} x={px-3} y={ft-8} width={6} height={fb-ft+16} fill="#3A2010" rx="1"/>
+      ))}
+      {/* Frame horizontals */}
+      <rect x={fl-8} y={ft-4} width={fr-fl+16} height={7} fill="#3A2010"/>
+      <rect x={fl-8} y={fb-3} width={fr-fl+16} height={7} fill="#3A2010"/>
+      {/* Mid-rail */}
+      <rect x={fl-8} y={vy-3} width={fr-fl+16} height={5} fill="#3A2010" opacity="0.7"/>
+
+      {/* ── Furniture — Sofa ── */}
+      {/* Sofa body in perspective (facing glass wall) */}
+      <g opacity="0.95">
+        {/* Back cushion */}
+        <polygon points="310,430 590,430 580,400 320,400" fill="#6A5848" filter="url(#fFloor)"/>
+        {/* Seat */}
+        <polygon points="300,460 600,460 590,430 310,430" fill="#7A6858"/>
+        {/* Left arm */}
+        <polygon points="300,460 310,430 310,400 295,430" fill="#5A4838"/>
+        {/* Right arm */}
+        <polygon points="600,460 590,430 590,400 605,430" fill="#5A4838"/>
+        {/* Cushion line */}
+        <line x1="450" y1="460" x2="450" y2="430" stroke="rgba(255,255,255,0.12)" strokeWidth="2"/>
+        {/* Sofa leg shadows */}
+        <ellipse cx="320" cy="466" rx="12" ry="4" fill="rgba(0,0,0,0.35)"/>
+        <ellipse cx="580" cy="466" rx="12" ry="4" fill="rgba(0,0,0,0.35)"/>
+      </g>
       {/* Coffee table */}
-      <rect x="330" y={H-62} width="240" height="10" rx="4" fill={P.wood2} />
-      {[340,558].map((x,i)=><rect key={i} x={x} y={H-52} width={9} height={28} rx="2" fill={P.wood1} />)}
+      <polygon points="370,490 530,490 520,478 380,478" fill="#3A2010" opacity="0.9"/>
+      <line x1="380" y1="478" x2="530" y2="490" stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
 
-      {/* Plant */}
-      <rect x="165" y={H-90} width="8" height="50" fill={P.wood1} />
-      <ellipse cx="169" cy={H-94} rx="24" ry="30" fill={P.green2} fillOpacity="0.85" />
-      <ellipse cx="155" cy={H-78} rx="14" ry="18" fill={P.green1} fillOpacity="0.75" />
+      {/* ── Ambient room glow (warm interior) ── */}
+      <radialGradient id="gRoomGlow" cx="50%" cy="50%" r="70%">
+        <stop offset="0%"   stopColor="rgba(255,220,140,0.18)"/>
+        <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
+      </radialGradient>
+      <rect width="900" height="540" fill="url(#gRoomGlow)"/>
 
-      <Label x={450} y={H-18} text="קיר-זכוכית שלם — פתוח לשדות" w={230} />
+      {/* ── Vignette ── */}
+      <radialGradient id="gVig" cx="50%" cy="50%" r="75%">
+        <stop offset="60%" stopColor="rgba(0,0,0,0)"/>
+        <stop offset="100%" stopColor="rgba(10,5,2,0.55)"/>
+      </radialGradient>
+      <rect width="900" height="540" fill="url(#gVig)"/>
     </svg>
   );
 }
 
-// ── Scene 2: Entry staircase ─────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   SCENE 2 — ENTRY: Double-height hall, floor-to-ceiling window
+══════════════════════════════════════════════════════════════════════════ */
 function EntryScene() {
-  const W = 720, H = 600;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ display:"block", width:"100%", height:"auto" }}>
-      <defs>
-        <linearGradient id="sky_e" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={P.sky1} /><stop offset="55%" stopColor={P.sky2} /><stop offset="100%" stopColor="#C8E8B0" />
-        </linearGradient>
-        <linearGradient id="wall_e" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor={P.plasterDark} /><stop offset="100%" stopColor={P.plaster} />
-        </linearGradient>
-        <linearGradient id="floor_e" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={P.floor1} /><stop offset="100%" stopColor={P.floor2} />
-        </linearGradient>
-        <linearGradient id="light_e" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#FFF8D0" stopOpacity="0.55" /><stop offset="100%" stopColor="#FFF8D0" stopOpacity="0" />
-        </linearGradient>
-        <clipPath id="winClip"><rect x="28" y="18" width="210" height="478" /></clipPath>
-      </defs>
+    <svg viewBox="0 0 900 540" xmlns="http://www.w3.org/2000/svg" style={{width:"100%",height:"100%",display:"block"}}>
+      <Defs/>
 
-      {/* Background wall */}
-      <rect width={W} height={H} fill="url(#wall_e)" />
+      {/* ── Staircase window — daylight backdrop ── */}
+      <rect width="900" height="540" fill="#F5EFDE"/>
 
-      {/* ── TALL WINDOW — LEFT ── */}
-      <rect x="28" y="18" width="210" height="478" fill="url(#sky_e)" />
-      {/* Trees outside */}
-      {[70,130,200].map((x,i)=>(
-        <g key={i} clipPath="url(#winClip)">
-          <rect x={x-4} y={380-(i*25)} width={8} height={120+(i*25)} fill={P.green1} />
-          <ellipse cx={x} cy={375-(i*25)} rx={26+(i*8)} ry={34+(i*5)} fill={P.green2} />
-        </g>
+      {/* ── Left side: tall window (floor-to-ceiling, 2-storey) ── */}
+      {/* Window niche reveals — stone surround */}
+      <rect x="60" y="30" width="310" height="490" fill="#A09078" filter="url(#fStone)"/>
+      {/* Window glass */}
+      <rect x="80" y="45" width="270" height="462" fill="url(#gSky)"/>
+      <rect x="80" y="45" width="270" height="462" fill="url(#gSun)"/>
+      {/* Landscape in window */}
+      <ellipse cx="215" cy="340" rx="200" ry="65" fill="#68AA48" filter="url(#fHaze)" opacity="0.8"/>
+      <rect x="80" y="385" width="270" height="122" fill="#7AB848"/>
+      {/* Horizon haze */}
+      <rect x="80" y="318" width="270" height="30" fill="rgba(195,225,245,0.6)"/>
+      {/* Cypress silhouettes */}
+      <ellipse cx="135" cy="325" rx="9" ry="45" fill="#1A5215" filter="url(#fHaze)" opacity="0.85"/>
+      <ellipse cx="290" cy="318" rx="8" ry="40" fill="#1E5818" filter="url(#fHaze)" opacity="0.8"/>
+      {/* Window frame — structural bars */}
+      <rect x="80"  y="45"  width="6"  height="462" fill="#3A2A14"/>
+      <rect x="344" y="45"  width="6"  height="462" fill="#3A2A14"/>
+      <rect x="80"  y="45"  width="270" height="6"  fill="#3A2A14"/>
+      <rect x="80"  y="505" width="270" height="6"  fill="#3A2A14"/>
+      {/* Horizontal rail at mid-floor */}
+      <rect x="80" y="272" width="270" height="5" fill="#4A3820"/>
+      {/* Vertical divider */}
+      <rect x="213" y="45" width="5" height="462" fill="#4A3820"/>
+      {/* Light rays from window */}
+      {[0,1,2,3,4].map(i=>(
+        <polygon key={i}
+          points={`${100+i*54},45 ${130+i*54},45 ${900},${380+i*30} ${900},${350+i*30}`}
+          fill={`rgba(255,240,200,${0.04-i*0.005})`}/>
       ))}
-      {/* Horizon */}
-      <line x1="28" y1="400" x2="238" y2="400" stroke={P.green1} strokeWidth="1" strokeOpacity="0.4" clipPath="url(#winClip)" />
-      {/* Sun */}
-      <circle cx="195" cy="65" r="26" fill="#FFF066" fillOpacity="0.75" clipPath="url(#winClip)" />
+      {/* Stone sill */}
+      <polygon points="60,507 370,507 380,518 50,518" fill="#C8B898" filter="url(#fStone)"/>
 
-      {/* Window frame */}
-      <rect x="22" y="12" width="222" height="490" rx="3" fill="none" stroke={P.dark} strokeWidth="8" />
-      <rect x="126" y="12" width="5" height="490" fill={P.dark} />      {/* vertical divider */}
-      <rect x="22" y="252" width="222" height="5" fill={P.dark} />     {/* mid horizontal */}
-      {/* Glass sheen */}
-      <line x1="52" y1="18" x2="52" y2="498" stroke="white" strokeWidth="2.5" strokeOpacity="0.2" clipPath="url(#winClip)" />
+      {/* ── Right side: entry hall interior ── */}
+      {/* Back wall — plaster */}
+      <rect x="370" y="0" width="530" height="540" fill="#EDE0C8"/>
+      <rect x="370" y="0" width="530" height="540" fill="url(#gWallTop)" opacity="0.6"/>
+      {/* Stone feature strip: tall vertical pilaster */}
+      <rect x="370" y="0" width="42" height="540" fill="#B0987A" filter="url(#fStone)"/>
+      <rect x="858" y="0" width="42" height="540" fill="#B0987A" filter="url(#fStone)"/>
+      {/* Baseboard */}
+      <rect x="370" y="505" width="530" height="22" fill="#C8B090" filter="url(#fStone)"/>
 
-      {/* ── STONE WALL — left of window ── */}
-      <rect x="0" y="0" width="24" height={H} fill={P.stone2} />
-      {[0,1,2,3,4,5,6,7,8,9,10,11].map(row=>(
-        <rect key={row} x={1} y={row*55+4} width={22} height={38} rx="2"
-          fill={row%3===0?P.stone1:row%3===1?P.stone2:P.stone3}
-          stroke={P.wood1} strokeWidth="0.5" />
-      ))}
-
-      {/* Stone above window */}
-      <rect x="24" y="0" width="220" height="14" fill={P.stone2} />
-
-      {/* ── RIGHT SIDE — staircase ── */}
-      {/* Right wall */}
-      <rect x="246" y="0" width={W-246} height={H} fill={P.plaster} />
-      {/* Upper ceiling */}
-      <rect x="246" y="0" width={W-246} height="35" fill={P.wood1} />
-      {/* Ceiling beams */}
-      {[310,390,470,550,640].map(x=>(
-        <rect key={x} x={x-10} y="0" width="20" height="35" fill={P.wood2} fillOpacity="0.7" />
-      ))}
-
-      {/* Upper floor slab */}
-      <rect x="246" y="228" width={W-246} height="18" fill={P.plasterDark} />
-
-      {/* STAIRS */}
-      {Array.from({length:13}).map((_,i)=>{
-        const sx = 260+i*35, sy = 462-i*18;
+      {/* ── Staircase ── */}
+      {/* Staircase in perspective — going up left to right */}
+      {Array.from({length:13},(_, i)=>{
+        const stepW = 38;
+        const stepH = 24;
+        const baseX = 430 + i*stepW;
+        const baseY = 540 - i*stepH;
         return (
           <g key={i}>
-            <rect x={sx} y={sy} width={35} height={5} fill={P.stone3} />           {/* tread */}
-            <rect x={sx} y={sy+5} width={5} height={18} fill={P.stone2} />          {/* riser */}
+            {/* Tread */}
+            <polygon
+              points={`${baseX},${baseY} ${baseX+stepW},${baseY} ${baseX+stepW},${baseY-8} ${baseX},${baseY-8}`}
+              fill="#C89860" filter="url(#fFloor)"/>
+            {/* Riser */}
+            <polygon
+              points={`${baseX},${baseY-8} ${baseX+stepW},${baseY-8} ${baseX+stepW},${baseY-stepH} ${baseX},${baseY-stepH}`}
+              fill="#E0CCA0"/>
+            {/* Step shadow edge */}
+            <line x1={baseX} y1={baseY-8} x2={baseX+stepW} y2={baseY-8}
+              stroke="rgba(80,50,20,0.45)" strokeWidth="1.5"/>
           </g>
         );
       })}
 
       {/* Handrail */}
-      <path d={`M260,445 L715,218`} fill="none" stroke={P.dark} strokeWidth="7" strokeLinecap="round" />
+      <path d="M430,535 Q560,450 920,215"
+        stroke="#5A3010" strokeWidth="8" fill="none" strokeLinecap="round" filter="url(#fWood)"/>
       {/* Balusters */}
-      {Array.from({length:12}).map((_,i)=>{
-        const bx=270+i*38, by=440-i*19;
-        return <line key={i} x1={bx} y1={by} x2={bx} y2={by+45} stroke={P.dark} strokeWidth="2.5" />;
+      {Array.from({length:12},(_, i)=>{
+        const bx = 445 + i*39;
+        const by = 532 - i*25;
+        const topX = 441 + i*39.8;
+        const topY = 525 - i*26.5;
+        return <line key={i} x1={bx} y1={by} x2={topX} y2={topY-55}
+          stroke="#7A5030" strokeWidth="3" opacity="0.9"/>;
       })}
 
-      {/* Ground floor */}
-      <rect x="246" y="465" width={W-246} height={H-465} fill="url(#floor_e)" />
-      {/* Floor tiles */}
-      {[300,370,440,510,580,650,710].map(x=>(
-        <line key={x} x1={x} y1="465" x2={x} y2={H} stroke={P.floor2} strokeWidth="0.8" strokeOpacity="0.35" />
+      {/* ── Floor ── */}
+      <rect x="370" y="510" width="530" height="30" fill="#C89860" filter="url(#fFloor)"/>
+
+      {/* ── Overhead — double height arch indication ── */}
+      {/* Upper floor void edge */}
+      <rect x="370" y="245" width="530" height="10" fill="#C8B090" opacity="0.6"/>
+      {/* Upper balustrade */}
+      <rect x="650" y="235" width="250" height="12" fill="#D8C8A8"/>
+      {Array.from({length:8},(_, i)=>(
+        <rect key={i} x={655+i*30} y={247} width={4} height={38} fill="#C0A880" opacity="0.8"/>
       ))}
 
-      {/* Light rays from window across room */}
-      <polygon points={`238,18 238,200 ${W},280 ${W},120`} fill="url(#light_e)" />
-      <polygon points={`238,200 238,400 ${W},450 ${W},280`} fill="url(#light_e)" />
+      {/* ── Light glow from window ── */}
+      <rect x="370" y="0" width="530" height="540" fill="url(#gStairLight)"/>
 
-      {/* Light pool on floor */}
-      <ellipse cx="420" cy={H-15} rx="160" ry="22" fill="#FFF8D0" fillOpacity="0.25" />
-
-      <Label x={133} y={H-18} text="חלון לגובה שתי קומות" w={180} />
-      <Label x={480} y={H-18} text="אור טבעי על המדרגות" w={195} />
+      {/* ── Vignette ── */}
+      <radialGradient id="gVig2" cx="30%" cy="45%" r="80%">
+        <stop offset="55%" stopColor="rgba(0,0,0,0)"/>
+        <stop offset="100%" stopColor="rgba(8,4,1,0.5)"/>
+      </radialGradient>
+      <rect width="900" height="540" fill="url(#gVig2)"/>
     </svg>
   );
 }
 
-// ── Scene 3: West facade exterior ───────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   SCENE 3 — WEST FACADE: Full glass wall exterior view
+══════════════════════════════════════════════════════════════════════════ */
 function WestScene() {
-  const W = 900, H = 560;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ display:"block", width:"100%", height:"auto" }}>
-      <defs>
-        <linearGradient id="sky_w" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#5090C8" /><stop offset="55%" stopColor={P.sky2} /><stop offset="100%" stopColor="#B8E0A8" />
-        </linearGradient>
-        <linearGradient id="ground_w" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={P.green2} /><stop offset="100%" stopColor={P.green1} />
-        </linearGradient>
-        <linearGradient id="stucco_w" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={P.plaster} /><stop offset="100%" stopColor={P.plasterDark} />
-        </linearGradient>
-        <linearGradient id="glass_w" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={P.glassShine} stopOpacity="0.55" /><stop offset="50%" stopColor={P.glass} stopOpacity="0.45" /><stop offset="100%" stopColor={P.glassShine} stopOpacity="0.35" />
-        </linearGradient>
-        <pattern id="stoneP_w" x="0" y="0" width="44" height="28" patternUnits="userSpaceOnUse">
-          <rect width="44" height="28" fill={P.stone2} />
-          <rect x="1" y="1" width="40" height="12" rx="1" fill={P.stone3} stroke={P.stone1} strokeWidth="0.6" />
-          <rect x="1" y="15" width="20" height="11" rx="1" fill={P.stone1} stroke={P.stone1} strokeWidth="0.6" />
-          <rect x="23" y="15" width="20" height="11" rx="1" fill={P.stone2} stroke={P.stone1} strokeWidth="0.6" />
-        </pattern>
-      </defs>
+    <svg viewBox="0 0 900 540" xmlns="http://www.w3.org/2000/svg" style={{width:"100%",height:"100%",display:"block"}}>
+      <Defs/>
 
-      {/* Sky */}
-      <rect width={W} height={H} fill="url(#sky_w)" />
-      {/* Clouds */}
-      {[[130,72,85],[340,55,65],[610,80,75],[790,60,58]].map(([cx,cy,rx],i)=>(
-        <g key={i}><ellipse cx={cx} cy={cy} rx={rx} ry={26} fill="white" fillOpacity="0.6" /><ellipse cx={cx+28} cy={cy-9} rx={rx*0.6} ry={20} fill="white" fillOpacity="0.45" /></g>
-      ))}
-      {/* Sun */}
-      <circle cx="800" cy="75" r="32" fill="#FFF066" fillOpacity="0.8" />
+      {/* ── Sky ── */}
+      <rect width="900" height="540" fill="url(#gSky)"/>
+      <rect width="900" height="540" fill="url(#gSun)"/>
 
-      {/* Ground + grass */}
-      <rect x="0" y="415" width={W} height={H-415} fill="url(#ground_w)" />
-      {Array.from({length:55}).map((_,i)=>(
-        <line key={i} x1={i*18} y1="415" x2={i*18+7} y2="406" stroke={P.green1} strokeWidth="1.5" strokeOpacity="0.5" />
+      {/* ── Background landscape ── */}
+      <ellipse cx="150" cy="290" rx="220" ry="75" fill="#60A848" filter="url(#fHaze)" opacity="0.7"/>
+      <ellipse cx="800" cy="295" rx="200" ry="70" fill="#58A040" filter="url(#fHaze)" opacity="0.65"/>
+      <rect y="305" width="900" height="235" fill="#7AB848"/>
+      <rect y="305" width="900" height="235" fill="#5A9028" opacity="0.45"/>
+      {/* Horizon haze */}
+      <rect y="285" width="900" height="35" fill="rgba(192,222,242,0.55)"/>
+      {/* Cypress trees at sides */}
+      {[80,130,760,820,858].map((x,i)=>(
+        <ellipse key={i} cx={x} cy={280+i%2*18} rx={10+i%2*4} ry={55+i%2*20}
+          fill={i%2===0?"#1A5215":"#246020"} filter="url(#fHaze)" opacity={0.85-i*0.06}/>
       ))}
 
-      {/* Terrace slab */}
-      <rect x="102" y="406" width="696" height="14" fill={P.stone3} />
-      <rect x="94" y="416" width="712" height="7" fill={P.stone2} />
-
-      {/* ── HOUSE ── */}
-      {/* Main stucco body */}
-      <rect x="118" y="118" width="664" height="290" fill="url(#stucco_w)" />
-
-      {/* Stone corners */}
-      <rect x="118" y="118" width="52" height="290" fill="url(#stoneP_w)" />
-      <rect x="730" y="118" width="52" height="290" fill="url(#stoneP_w)" />
-      {/* Stone base band */}
-      <rect x="118" y="350" width="664" height="58" fill="url(#stoneP_w)" />
-
-      {/* ── FULL GLASS GROUND FLOOR ── */}
-      {/* Warm interior glow behind glass */}
-      <rect x="170" y="252" width="560" height="100" fill="#FFF5D8" fillOpacity="0.55" />
-      {/* 7 glass panels */}
-      {Array.from({length:7}).map((_,i)=>{
-        const pw=80, px=170+i*pw;
-        return (
-          <g key={i}>
-            <rect x={px} y="252" width={pw} height="100" fill="url(#glass_w)" />
-            <rect x={px} y="252" width="3.5" height="100" fill={P.dark} fillOpacity="0.55" />
-            <line x1={px+14} y1="254" x2={px+9} y2="350" stroke="white" strokeWidth="1.8" strokeOpacity="0.22" />
-          </g>
-        );
-      })}
-      <rect x="730" y="252" width="3.5" height="100" fill={P.dark} fillOpacity="0.55" />
-      <rect x="166" y="248" width="568" height="8" fill={P.dark} rx="1.5" />
-      <rect x="166" y="348" width="568" height="8" fill={P.dark} rx="1.5" />
-
-      {/* ── WOOD CORNICE / FLOOR DIVIDER ── */}
-      <rect x="112" y="240" width="676" height="16" fill={P.wood2} />
-      {[138,182,228,276,324,372,420,468,516,562,608,654,698,738].map(x=>(
-        <rect key={x} x={x} y="224" width="14" height="35" rx="3" fill={P.wood1} />
+      {/* ── Ground plane / terrace ── */}
+      <polygon points="0,540 900,540 900,385 0,420" fill="#C8B898" filter="url(#fStone)"/>
+      {/* Terrace paving lines */}
+      {[400,418,437,458,480,504,530,540].map((y,i)=>(
+        <line key={i} x1="0" y1={y} x2="900" y2={y} stroke="rgba(160,130,90,0.3)" strokeWidth="1.2"/>
       ))}
+      {/* Building shadow on ground */}
+      <polygon points="158,420 750,385 738,540 170,540"
+        fill="rgba(40,25,10,0.28)" filter="url(#fShadow)"/>
 
-      {/* ── UPPER WINDOWS — grouped ── */}
-      {/* Left group: 2 arched */}
-      {[0,1].map(i=>{
-        const wx=192+i*90;
-        return (
-          <g key={i}>
-            <path d={`M${wx},230 L${wx},155 Q${wx+32},128 ${wx+64},155 L${wx+64},230 Z`}
-              fill={P.glass} fillOpacity="0.7" stroke={P.dark} strokeWidth="2.5" />
-            <rect x={wx-13} y="155" width="11" height="75" rx="2" fill={P.wood2} />
-            <rect x={wx+64} y="155" width="11" height="75" rx="2" fill={P.wood2} />
-            {[0,1,2,3,4].map(j=><line key={j} x1={wx-13} y1={163+j*13} x2={wx-2} y2={163+j*13} stroke={P.wood1} strokeWidth="1.2" />)}
-          </g>
-        );
-      })}
-      {/* Center: balcony doors */}
-      {[0,1].map(i=>{
-        const wx=400+i*85;
-        return (
-          <g key={i}>
-            <rect x={wx} y="143" width="80" height="97" rx="2" fill={P.glass} fillOpacity="0.7" stroke={P.dark} strokeWidth="2.5" />
-            <line x1={wx+40} y1="143" x2={wx+40} y2="240" stroke={P.dark} strokeWidth="2" />
-          </g>
-        );
-      })}
-      {/* Balcony railing */}
-      <rect x="394" y="238" width="176" height="5" fill={P.dark} />
-      {[400,416,432,448,464,480,496,512,528,544,558].map(x=>(
-        <rect key={x} x={x} y="238" width="2.5" height="22" fill={P.dark} />
+      {/* ── Building base — stone foundation ── */}
+      <rect x="155" y="365" width="590" height="30" fill="#9A8870" filter="url(#fStone)"/>
+
+      {/* ── Stone corner pilasters ── */}
+      <rect x="155" y="80" width="52" height="315" fill="#A89070" filter="url(#fStone)"/>
+      <rect x="155" y="80" width="52" height="315" fill="url(#gWallLit)" opacity="0.8"/>
+      <rect x="693" y="80" width="52" height="315" fill="#A89070" filter="url(#fStone)"/>
+      <rect x="693" y="80" width="52" height="315" fill="url(#gWallLit)" opacity="0.8"/>
+
+      {/* ── Glass panel wall (7 panels) ── */}
+      {/* Dark reveal behind glass */}
+      <rect x="205" y="90" width="490" height="305" fill="#1A1008"/>
+      {/* Interior warm light visible through glass */}
+      <rect x="207" y="92" width="486" height="301" fill="url(#gWarm)" opacity="0.88"/>
+      {/* Interior silhouette - furniture */}
+      <polygon points="270,360 430,360 420,348 280,350" fill="rgba(60,38,18,0.65)"/>
+      <polygon points="470,365 610,365 600,350 480,352" fill="rgba(55,35,15,0.6)"/>
+      {/* Glass panels overlay */}
+      {[207,277,347,417,487,557,627].map((x,i)=>(
+        <rect key={i} x={x} y="92" width={68} height="301" fill="url(#gGlass)" rx="1" opacity="0.75"/>
       ))}
-      <rect x="394" y="258" width="176" height="3" fill={P.dark} />
-      {/* Right window group */}
-      {[0,1].map(i=>{
-        const wx=628+i*78;
-        return (
-          <g key={i}>
-            <rect x={wx} y="150" width="70" height="88" rx="2" fill={P.glass} fillOpacity="0.7" stroke={P.dark} strokeWidth="2.5" />
-            <line x1={wx+35} y1="150" x2={wx+35} y2="238" stroke={P.dark} strokeWidth="1.8" />
-            <rect x={wx-12} y="150" width="10" height="88" rx="2" fill={P.wood2} />
-            <rect x={wx+70} y="150" width="10" height="88" rx="2" fill={P.wood2} />
-          </g>
-        );
-      })}
-
-      {/* ── ROOF / GABLE ── */}
-      <polygon points={`88,118 450,28 812,118`} fill={P.terracotta} />
-      <polygon points={`88,118 812,118 812,130 88,130`} fill="#8B3010" />
-      <polygon points={`124,118 450,44 776,118`} fill="url(#stucco_w)" />
-      {/* Roof rafter ends */}
-      {[104,150,196,244,290,338,386,434,480,528,576,622,668,712,756,790].map(x=>(
-        <rect key={x} x={x} y="115" width="13" height="22" rx="3" fill={P.wood2} />
+      {/* Glass shine */}
+      {[207,277,347,417,487,557,627].map((x,i)=>(
+        <rect key={i} x={x} y="92" width={26} height="301" fill="url(#gGlassShine)" rx="1" opacity="0.7"/>
       ))}
-
-      {/* Vine left corner */}
-      <path d={`M118,415 Q110,375 118,335 Q108,295 116,255 Q106,215 114,175 Q104,142 112,118`}
-        fill="none" stroke={P.green1} strokeWidth="3.5" strokeOpacity="0.72" />
-      {[410,375,338,300,260,222,182,146].map((y,i)=>(
-        <ellipse key={i} cx={112+(i%3-1)*7} cy={y} rx={9+(i%3)*3} ry={6+(i%2)*3} fill={P.green2} fillOpacity="0.75" />
+      {/* Panel frames */}
+      {[205,273,341,409,477,545,613,693].map((x,i)=>(
+        <rect key={i} x={x} y="88" width={6} height="309} " fill="#2A1A08"/>
       ))}
+      <rect x="205" y="88"  width="490" height="8"  fill="#2A1A08"/>
+      <rect x="205" y="389" width="490" height="8"  fill="#2A1A08"/>
+      {/* Mid-rail */}
+      <rect x="205" y="238" width="490" height="5" fill="#3A2810" opacity="0.8"/>
 
-      {/* Lavender base */}
-      {Array.from({length:14}).map((_,i)=>(
-        <g key={i}><ellipse cx={132+i*50} cy={415} rx={7} ry={11} fill="#9B7AC0" fillOpacity="0.65" />
-        <line x1={132+i*50} y1="415" x2={132+i*50} y2="426" stroke="#6B4A90" strokeWidth="2" strokeOpacity="0.5" /></g>
+      {/* ── Wood cornice with rafter ends ── */}
+      <rect x="145" y="64" width="610" height="28" fill="#5A3010" filter="url(#fWood)"/>
+      {/* Rafter ends protruding */}
+      {Array.from({length:15},(_, i)=>(
+        <g key={i}>
+          <rect x={162+i*42} y="34" width={18} height="36} " fill="#6A3A18" filter="url(#fWood)"/>
+          <rect x={163+i*42} y="33" width={16} height="7}  " fill="#7A4A22"/>
+        </g>
       ))}
+      {/* Cornice shadow */}
+      <rect x="145" y="90" width="610" height="12" fill="rgba(0,0,0,0.28)"/>
 
-      <Label x={450} y={H-18} text="זכוכית על כל הרוחב — קומת קרקע" w={248} />
+      {/* ── Roof ── */}
+      <polygon points="130,68 770,68 800,30 100,30" fill="url(#gRoof)" filter="url(#fRoof)"/>
+      {/* Roof edge highlight */}
+      <line x1="100" y1="30" x2="800" y2="30" stroke="rgba(255,200,150,0.35)" strokeWidth="2"/>
+
+      {/* ── Terrace floor extension ── */}
+      <polygon points="155,395 745,395 760,540 140,540" fill="#C0A880" filter="url(#fStone)" opacity="0.6"/>
+
+      {/* ── Vignette ── */}
+      <radialGradient id="gVig3" cx="50%" cy="52%" r="78%">
+        <stop offset="55%" stopColor="rgba(0,0,0,0)"/>
+        <stop offset="100%" stopColor="rgba(5,3,1,0.52)"/>
+      </radialGradient>
+      <rect width="900" height="540" fill="url(#gVig3)"/>
     </svg>
   );
 }
 
-// ── Scene 4: Tuscan side facade ──────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   SCENE 4 — TUSCAN FACADE: Stone, arches, shutters, vine — all facades
+══════════════════════════════════════════════════════════════════════════ */
 function TuscanScene() {
-  const W = 900, H = 560;
+  /* Slight 3/4 angle: main wall x 120..760, receding side wall x 760..840 */
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ display:"block", width:"100%", height:"auto" }}>
-      <defs>
-        <linearGradient id="sky_t" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#4080B8" /><stop offset="55%" stopColor={P.sky2} /><stop offset="100%" stopColor="#A8D898" />
-        </linearGradient>
-        <linearGradient id="stucco_t" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#F2E6D2" /><stop offset="100%" stopColor="#E8D8C0" />
-        </linearGradient>
-        <linearGradient id="ground_t" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={P.green2} /><stop offset="100%" stopColor={P.green1} />
-        </linearGradient>
-        <pattern id="stone_t" x="0" y="0" width="44" height="28" patternUnits="userSpaceOnUse">
-          <rect width="44" height="28" fill={P.stone2} />
-          <rect x="1" y="1" width="40" height="12" rx="1" fill={P.stone3} stroke={P.stone1} strokeWidth="0.6" />
-          <rect x="1" y="15" width="20" height="11" rx="1" fill={P.stone1} stroke={P.stone1} strokeWidth="0.5" />
-          <rect x="23" y="15" width="20" height="11" rx="1" fill={P.stone2} stroke={P.stone1} strokeWidth="0.5" />
-        </pattern>
-      </defs>
+    <svg viewBox="0 0 900 540" xmlns="http://www.w3.org/2000/svg" style={{width:"100%",height:"100%",display:"block"}}>
+      <Defs/>
 
-      {/* Sky */}
-      <rect width={W} height={H} fill="url(#sky_t)" />
-      {[[170,65,80],[420,48,62],[680,72,68]].map(([cx,cy,rx],i)=>(
-        <g key={i}><ellipse cx={cx} cy={cy} rx={rx} ry={24} fill="white" fillOpacity="0.58" /><ellipse cx={cx+26} cy={cy-8} rx={rx*0.55} ry={18} fill="white" fillOpacity="0.42" /></g>
+      {/* ── Sky ── */}
+      <rect width="900" height="540" fill="url(#gSky)"/>
+      <rect width="900" height="540" fill="url(#gSun)"/>
+
+      {/* ── Background: rolling fields + trees ── */}
+      <ellipse cx="250" cy="295" rx="280" ry="80" fill="#62AA4A" filter="url(#fHaze)" opacity="0.72"/>
+      <ellipse cx="820" cy="300" rx="200" ry="72" fill="#5AA040" filter="url(#fHaze)" opacity="0.65"/>
+      <rect y="310" width="900" height="230" fill="#78B845"/>
+      <rect y="310" width="900" height="230" fill="#5A9030" opacity="0.5"/>
+      {/* Horizon haze */}
+      <rect y="292" width="900" height="32" fill="rgba(192,222,242,0.58)"/>
+      {/* Cypress trees */}
+      {[65,115,820,872].map((x,i)=>(
+        <ellipse key={i} cx={x} cy={282+i%2*15} rx={10+i*2} ry={55+i%2*18}
+          fill={i%2===0?"#18501A":"#225E22"} filter="url(#fHaze)" opacity={0.88-i*0.07}/>
       ))}
 
-      {/* Ground */}
-      <rect x="0" y="420" width={W} height={H-420} fill="url(#ground_t)" />
-      {Array.from({length:55}).map((_,i)=>(
-        <line key={i} x1={i*18} y1="420" x2={i*18+7} y2="412" stroke={P.green1} strokeWidth="1.4" strokeOpacity="0.45" />
+      {/* ── Ground / paving ── */}
+      <polygon points="0,540 900,540 900,382 0,410" fill="#C0B090" filter="url(#fStone)"/>
+      {[398,416,436,458,482,508,536].map((y,i)=>(
+        <line key={i} x1="0" y1={y} x2="900" y2={y} stroke="rgba(150,120,80,0.28)" strokeWidth="1.2"/>
       ))}
-      {/* Path */}
-      <rect x="105" y="413" width="690" height="12" fill={P.stone3} />
-      <rect x="96" y="421" width="708" height="6" fill={P.stone2} />
+      {/* Building shadow */}
+      <polygon points="120,410 760,382 748,540 132,540"
+        fill="rgba(35,22,8,0.3)" filter="url(#fShadow)"/>
 
-      {/* ── HOUSE ── */}
-      <rect x="122" y="120" width="656" height="295" fill="url(#stucco_t)" />
+      {/* ── Foundation / plinth ── */}
+      <rect x="112" y="358" width="656" height="32" fill="#9A8870" filter="url(#fStone)"/>
+      <rect x="112" y="358" width="656" height="32" fill="url(#gWallTop)" opacity="0.5"/>
 
-      {/* Stone corner pillars */}
-      <rect x="122" y="120" width="58" height="295" fill="url(#stone_t)" />
-      <rect x="720" y="120" width="58" height="295" fill="url(#stone_t)" />
-      {/* Stone base band */}
-      <rect x="122" y="355" width="656" height="60" fill="url(#stone_t)" />
-      {/* Stone accent band mid */}
-      <rect x="122" y="236" width="656" height="14" fill="url(#stone_t)" />
+      {/* ── MAIN WALL — stone, full filter ── */}
+      <rect x="120" y="68" width="638" height="295" fill="#B8A080" filter="url(#fStone)"/>
+      {/* Wall lighting gradient */}
+      <rect x="120" y="68" width="638" height="295" fill="url(#gWallLit)"/>
+      <rect x="120" y="68" width="638" height="295" fill="url(#gWallTop)" opacity="0.7"/>
 
-      {/* ── WOOD CORNICE ── */}
-      <rect x="114" y="236" width="672" height="16" fill={P.wood2} />
-      {[136,180,226,274,322,370,418,466,514,562,608,654,698,730].map(x=>(
-        <rect key={x} x={x} y="220" width="13" height="34" rx="3" fill={P.wood1} />
-      ))}
+      {/* ── SIDE WALL (receding, right) ── */}
+      <polygon points="758,68 840,78 840,358 758,363" fill="#9A8870" filter="url(#fStone)"/>
+      <polygon points="758,68 840,78 840,358 758,363"
+        fill="rgba(10,5,0,0.38)"/>
 
-      {/* ── UPPER ARCHED WINDOWS ── left group */}
-      {[0,1].map(i=>{
-        const wx=194+i*98;
-        return (
-          <g key={i}>
-            <path d={`M${wx},232 L${wx},148 Q${wx+34},118 ${wx+68},148 L${wx+68},232 Z`}
-              fill={P.glass} fillOpacity="0.72" stroke={P.dark} strokeWidth="2.5" />
-            <rect x={wx-14} y="148" width="12" height="84" rx="2" fill={P.wood2} />
-            <rect x={wx+68} y="148" width="12" height="84" rx="2" fill={P.wood2} />
-            {[0,1,2,3,4].map(j=><line key={j} x1={wx-14} y1={158+j*14} x2={wx-2} y2={158+j*14} stroke={P.wood1} strokeWidth="1.3" />)}
-            {[0,1,2,3,4].map(j=><line key={j} x1={wx+68} y1={158+j*14} x2={wx+80} y2={158+j*14} stroke={P.wood1} strokeWidth="1.3" />)}
-          </g>
-        );
-      })}
-
-      {/* Center window + window seat */}
-      <rect x="430" y="138" width="105" height="98" rx="3" fill={P.glass} fillOpacity="0.7" stroke={P.dark} strokeWidth="2.5" />
-      <line x1="482" y1="138" x2="482" y2="236" stroke={P.dark} strokeWidth="2" />
-      <rect x="430" y="228" width="105" height="10" rx="3" fill={P.stone3} />  {/* window seat */}
-
-      {/* Right arched window */}
-      {[0].map(i=>{
-        const wx=560;
-        return (
-          <g key={i}>
-            <path d={`M${wx},232 L${wx},152 Q${wx+32},124 ${wx+64},152 L${wx+64},232 Z`}
-              fill={P.glass} fillOpacity="0.7" stroke={P.dark} strokeWidth="2.5" />
-            <rect x={wx-13} y="152" width="11" height="80" rx="2" fill={P.wood2} />
-            <rect x={wx+64} y="152" width="11" height="80" rx="2" fill={P.wood2} />
-          </g>
-        );
-      })}
-
-      {/* Far right small window */}
-      <rect x="648" y="150" width="65" height="80" rx="3" fill={P.glass} fillOpacity="0.65" stroke={P.dark} strokeWidth="2.5" />
-      <line x1="680" y1="150" x2="680" y2="230" stroke={P.dark} strokeWidth="2" />
-      <rect x="635" y="150" width="11" height="80" rx="2" fill={P.wood2} />
-      <rect x="714" y="150" width="11" height="80" rx="2" fill={P.wood2} />
-
-      {/* ── GROUND FLOOR ARCHED WINDOWS ── */}
-      {[192, 365, 570].map((wx,i)=>(
+      {/* ── Ground floor: 3 arched windows ── */}
+      {[185, 385, 585].map((wx, i)=>(
         <g key={i}>
-          <path d={`M${wx},415 L${wx},290 Q${wx+40},258 ${wx+80},290 L${wx+80},415 Z`}
-            fill={P.glass} fillOpacity="0.65" stroke={P.dark} strokeWidth="2.5" />
-          <line x1={wx+40} y1="264" x2={wx+40} y2="415" stroke={P.dark} strokeWidth="2" />
-          <line x1={wx} y1="348" x2={wx+80} y2="348" stroke={P.dark} strokeWidth="1.8" />
+          {/* Window niche (stone reveal) */}
+          <rect x={wx-42} y={142} width={84} height={185} fill="#9A8462" filter="url(#fStone)"/>
+          {/* Arch shape: rect bottom + semicircle top */}
+          <rect x={wx-36} y={196} width={72} height={126} fill="url(#gSky)"/>
+          {/* Arch — clip to semicircle */}
+          <ellipse cx={wx} cy={198} rx={36} ry={36} fill="url(#gSky)"/>
+          {/* Landscape in window */}
+          <ellipse cx={wx} cy={265} rx={55} ry={35} fill="#6AAC4A" filter="url(#fHaze)" opacity="0.7"/>
+          <rect x={wx-36} y={278} width={72} height={44} fill="#7AB848"/>
+          {/* Interior warm glow */}
+          <radialGradient id={`gWin${i}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#FFF5C0" stopOpacity="0.65"/>
+            <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
+          </radialGradient>
+          <rect x={wx-36} y={196} width={72} height={126} fill={`url(#gWin${i})`}/>
+          <ellipse cx={wx} cy={198} rx={36} ry={36} fill={`url(#gWin${i})`}/>
           {/* Keystone */}
-          <polygon points={`${wx+36},261 ${wx+40},254 ${wx+44},261`} fill={P.stone2} stroke={P.stone1} strokeWidth="0.8" />
+          <polygon points={`${wx-6},157 ${wx+6},157 ${wx+4},172 ${wx-4},172`} fill="#C8B090"/>
+          {/* Arch voussoir highlight */}
+          <path d={`M ${wx-36},198 A 36,36 0 0 1 ${wx+36},198`}
+            fill="none" stroke="rgba(255,230,180,0.4)" strokeWidth="3"/>
+          {/* Shutter left */}
+          <rect x={wx-72} y={196} width={32} height={122} fill="#5A3010" filter="url(#fWood)" rx="2"/>
+          {/* Shutter slats */}
+          {[0,1,2,3,4,5,6].map(s=>(
+            <line key={s} x1={wx-72} y1={196+16+s*16} x2={wx-40} y2={196+12+s*16}
+              stroke="rgba(0,0,0,0.22)" strokeWidth="1.5"/>
+          ))}
+          {/* Shutter right */}
+          <rect x={wx+40} y={196} width={32} height={122} fill="#5A3010" filter="url(#fWood)" rx="2"/>
+          {[0,1,2,3,4,5,6].map(s=>(
+            <line key={s} x1={wx+40} y1={196+16+s*16} x2={wx+72} y2={196+12+s*16}
+              stroke="rgba(0,0,0,0.22)" strokeWidth="1.5"/>
+          ))}
+          {/* Sill */}
+          <rect x={wx-44} y={320} width={88} height={10} fill="#C8B898"/>
         </g>
       ))}
 
-      {/* ── ROOF ── */}
-      <polygon points={`84,120 450,24 816,120`} fill={P.terracotta} />
-      <polygon points={`84,120 816,120 816,132 84,132`} fill="#8B3010" />
-      <polygon points={`124,120 450,40 776,120`} fill="url(#stucco_t)" />
-      {/* Rafter ends */}
-      {[100,148,196,246,296,346,394,444,494,542,590,638,686,734,780,810].map(x=>(
-        <rect key={x} x={x} y="117" width="12" height="22" rx="3" fill={P.wood2} />
-      ))}
-
-      {/* ── VINES right corner ── */}
-      <path d={`M778,420 Q770,382 778,342 Q768,302 776,260 Q766,222 774,182 Q764,148 772,120`}
-        fill="none" stroke={P.green1} strokeWidth="3.5" strokeOpacity="0.72" />
-      {[416,378,340,302,260,224,184,148].map((y,i)=>(
+      {/* ── Upper floor: 3 rectangular windows with arched top ── */}
+      {[185, 385, 585].map((wx, i)=>(
         <g key={i}>
-          <ellipse cx={772+(i%3-1)*7} cy={y} rx={10+(i%3)*3} ry={7+(i%2)*3} fill={P.green2} fillOpacity="0.8" />
-          {i%2===0 && <ellipse cx={762-(i%2)*4} cy={y-9} rx={6} ry={5} fill={P.green1} fillOpacity="0.65" />}
+          {/* Niche */}
+          <rect x={wx-30} y={82} width={60} height={105} fill="#9A8462" filter="url(#fStone)"/>
+          {/* Glass */}
+          <rect x={wx-24} y={90} width={48} height={80} fill="url(#gSky)" opacity="0.85"/>
+          <ellipse cx={wx} cy={92} rx={24} ry={18} fill="url(#gSky)" opacity="0.85"/>
+          {/* Interior glow */}
+          <radialGradient id={`gWin2${i}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#FFF8D0" stopOpacity="0.5"/>
+            <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
+          </radialGradient>
+          <rect x={wx-24} y={90} width={48} height={80} fill={`url(#gWin2${i})`}/>
+          <ellipse cx={wx} cy={92} rx={24} ry={18} fill={`url(#gWin2${i})`}/>
+          {/* Keystone */}
+          <polygon points={`${wx-4},82 ${wx+4},82 ${wx+3},92 ${wx-3},92`} fill="#C8B090"/>
+          {/* Shutters */}
+          <rect x={wx-54} y={90} width={26} height={80} fill="#5A3010" filter="url(#fWood)" rx="1"/>
+          <rect x={wx+28} y={90} width={26} height={80} fill="#5A3010" filter="url(#fWood)" rx="1"/>
+          {[0,1,2,3,4].map(s=>(
+            <g key={s}>
+              <line x1={wx-54} y1={100+s*14} x2={wx-28} y2={96+s*14} stroke="rgba(0,0,0,0.2)" strokeWidth="1.2"/>
+              <line x1={wx+28} y1={100+s*14} x2={wx+54} y2={96+s*14} stroke="rgba(0,0,0,0.2)" strokeWidth="1.2"/>
+            </g>
+          ))}
         </g>
       ))}
 
-      {/* Lavender */}
-      {Array.from({length:14}).map((_,i)=>(
-        <g key={i}><ellipse cx={138+i*50} cy={420} rx={7} ry={11} fill="#9B7AC0" fillOpacity="0.65" />
-        <line x1={138+i*50} y1="420" x2={138+i*50} y2="430" stroke="#6B4A90" strokeWidth="2" strokeOpacity="0.5" /></g>
+      {/* ── Stone corner quoins ── */}
+      {/* Left corner */}
+      {[0,1,2,3,4,5,6,7,8].map(i=>(
+        <g key={i}>
+          <rect x={120} y={78+i*37} width={38} height={32} fill="#C0A880" filter="url(#fStone)"/>
+          <rect x={120} y={110+i*37} width={38} height={5} fill="#8A7060"/>
+        </g>
+      ))}
+      {/* Right corner */}
+      {[0,1,2,3,4,5,6,7,8].map(i=>(
+        <g key={i}>
+          <rect x={720} y={78+i*37} width={38} height={32} fill="#C0A880" filter="url(#fStone)"/>
+          <rect x={720} y={110+i*37} width={38} height={5} fill="#8A7060"/>
+        </g>
       ))}
 
-      <Label x={450} y={H-18} text="שפה טוסקנית — אבן, קשתות, תריסי עץ" w={268} />
+      {/* ── Cornice ── */}
+      <rect x="110" y="52" width="658" height="26" fill="#B8A080" filter="url(#fStone)"/>
+      <rect x="110" y="50" width="658" height="8" fill="#C8B090"/>
+      {/* Cornice dentil */}
+      {Array.from({length:22},(_, i)=>(
+        <rect key={i} x={120+i*29} y={50} width={18} height={9} fill="#A89070"/>
+      ))}
+
+      {/* ── Roof ── */}
+      <polygon points="95,54 805,54 820,22 80,22" fill="url(#gRoof)" filter="url(#fRoof)"/>
+      {/* Roof ridge */}
+      <line x1="80" y1="22" x2="820" y2="22" stroke="rgba(255,180,140,0.4)" strokeWidth="2"/>
+      {/* Chimney */}
+      <rect x="600" y="-8" width="42" height="36} " fill="#9A8070" filter="url(#fStone)"/>
+      <rect x="596" y="22" width="50" height="8" fill="#C0A880"/>
+
+      {/* ── Climbing vine (right side) ── */}
+      <rect x="692" y="68" width="68" height="295" fill="url(#pVine)" opacity="0.88"/>
+      {/* Vine stem */}
+      <path d="M730,360 Q718,280 726,180 Q734,100 720,68"
+        stroke="#2A6015" strokeWidth="3" fill="none" opacity="0.7"/>
+      <path d="M748,360 Q755,270 744,175 Q738,108 752,68"
+        stroke="#306818" strokeWidth="2" fill="none" opacity="0.6"/>
+
+      {/* ── Lavender at base ── */}
+      <rect x="120" y="355" width="640" height="42" fill="url(#pVine)" opacity="0.5"/>
+      {/* Lavender spikes */}
+      {Array.from({length:32},(_, i)=>{
+        const lx = 128 + i*20;
+        const lh = 18 + (i%3)*8;
+        return (
+          <g key={i}>
+            <line x1={lx} y1={387} x2={lx} y2={387-lh} stroke="#5A6228" strokeWidth="1.5"/>
+            <ellipse cx={lx} cy={387-lh-5} rx={4} ry={8}
+              fill={i%3===0?"#8878B8":i%3===1?"#6A60A0":"#9888C8"} opacity="0.82"/>
+          </g>
+        );
+      })}
+
+      {/* ── Vignette ── */}
+      <radialGradient id="gVig4" cx="50%" cy="50%" r="78%">
+        <stop offset="55%" stopColor="rgba(0,0,0,0)"/>
+        <stop offset="100%" stopColor="rgba(5,3,1,0.5)"/>
+      </radialGradient>
+      <rect width="900" height="540" fill="url(#gVig4)"/>
     </svg>
   );
 }
 
-// ── Scene 5: Upper floor plan ────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   SCENE 5 — UPPER FLOOR PLAN: Wing separation + skylight + character
+══════════════════════════════════════════════════════════════════════════ */
 function UpperScene() {
-  const W = 760, H = 620;
+  const W=900, H=540;
+  /* Floor plan rooms */
+  const rooms = {
+    masterBed:  {x:80,  y:60,  w:220, h:190, fill:"#C8A8E8", label:"חדר הורים",  sublabel:"38 מ״ר"},
+    masterBath: {x:80,  y:250, w:130, h:110, fill:"#B898D8", label:"אמבטיה",       sublabel:""},
+    masterWIC:  {x:210, y:250, w:90,  h:110, fill:"#C0A0E0", label:"ארון",          sublabel:""},
+    masterBal:  {x:80,  y:170, w:220, h:82,  fill:"#A888C8", label:"מרפסת הורים", sublabel:""},
+    corridor:   {x:300, y:120, w:300, h:110, fill:"#F5E878", label:"מסדרון + סקיילייט", sublabel:""},
+    skylight:   {x:390, y:135, w:120, h:80,  fill:"rgba(135,210,250,0.6)", label:"", sublabel:""},
+    kid1:       {x:600, y:60,  w:220, h:170, fill:"#90C890", label:"חדר ילד א׳",  sublabel:"22 מ״ר"},
+    kid2:       {x:600, y:230, w:220, h:130, fill:"#80B8E0", label:"חדר ילד ב׳",  sublabel:"20 מ״ר"},
+    bath2:      {x:480, y:120, w:120, h:110, fill:"#98D0B0", label:"שירותים",       sublabel:""},
+    stair:      {x:300, y:230, w:180, h:130, fill:"#E8D0A8", label:"גרם מדרגות",   sublabel:""},
+  };
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ display:"block", width:"100%", height:"auto" }}>
+    <svg viewBox={`0 0 ${W} ${H}`} xmlns="http://www.w3.org/2000/svg" style={{width:"100%",height:"100%",display:"block"}}>
       <defs>
-        <pattern id="grid_u" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M20,0 L0,0 L0,20" fill="none" stroke="#D4C8B8" strokeWidth="0.4" />
+        <pattern id="grid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(100,100,140,0.12)" strokeWidth="0.5"/>
         </pattern>
-        <linearGradient id="parents_u" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#EEE0F5" /><stop offset="100%" stopColor="#E0CCEA" />
-        </linearGradient>
-        <linearGradient id="kids1_u" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#D8F0E8" /><stop offset="100%" stopColor="#C8E4DC" />
-        </linearGradient>
-        <linearGradient id="kids2_u" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#D8EAF0" /><stop offset="100%" stopColor="#C8DCE8" />
-        </linearGradient>
-        <linearGradient id="hall_u" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#FFF8D8" /><stop offset="100%" stopColor="#F5ECC8" />
-        </linearGradient>
-        <linearGradient id="bath_u" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#D0E8F5" /><stop offset="100%" stopColor="#C0DAEC" />
-        </linearGradient>
       </defs>
-
       {/* Background */}
-      <rect width={W} height={H} fill={P.cream} />
-      <rect width={W} height={H} fill="url(#grid_u)" />
+      <rect width={W} height={H} fill="#1E1E2E"/>
+      <rect width={W} height={H} fill="url(#grid)"/>
 
-      {/* ── OUTER WALLS ── */}
-      <rect x="64" y="55" width="632" height="505" fill="none" stroke={P.dark} strokeWidth="12" rx="2" />
-
-      {/* ── PARENTS WING ── left */}
-      {/* Master bedroom */}
-      <rect x="70" y="61" width="212" height="216" fill="url(#parents_u)" />
-      <rect x="70" y="61" width="212" height="216" fill="none" stroke="#7040A0" strokeWidth="2.5" />
-      {/* Bed */}
-      <rect x="88" y="82" width="130" height="88" rx="7" fill="#A070C0" fillOpacity="0.38" />
-      <rect x="88" y="82" width="130" height="24" rx="5" fill="#8050A0" fillOpacity="0.48" />
-      {[76,220].map((bx,i)=><rect key={i} x={bx} y="96" width="14" height="22" rx="3" fill="#9060B0" fillOpacity="0.48" />)}
-      {/* Wardrobe */}
-      <rect x="88" y="196" width="90" height="18" rx="2" fill="#8050A0" fillOpacity="0.32" />
-      <line x1="133" y1="196" x2="133" y2="214" stroke="#6030A0" strokeWidth="1" />
-      {/* Window seat south */}
-      <rect x="88" y="260" width="185" height="14" rx="3" fill="#9860B0" fillOpacity="0.28" stroke="#7040A0" strokeWidth="1.2" strokeDasharray="5 3" />
-      {/* Labels */}
-      <text x="176" y="246" textAnchor="middle" fill="#6030A0" fontSize="12" fontWeight="800" fontFamily="'Heebo',Arial,sans-serif">חדר הורים</text>
-      <text x="176" y="260" textAnchor="middle" fill="#7040A0" fontSize="9.5" fontFamily="'Heebo',Arial,sans-serif">~22 מ״ר</text>
-
-      {/* Ensuite bathroom */}
-      <rect x="70" y="277" width="212" height="108" fill="url(#bath_u)" />
-      <rect x="70" y="277" width="212" height="108" fill="none" stroke="#2060A0" strokeWidth="2" />
-      {/* Shower */}
-      <rect x="82" y="288" width="58" height="60" rx="2" fill="#90C0E0" fillOpacity="0.55" />
-      <line x1="111" y1="288" x2="111" y2="348" stroke="#2060A0" strokeWidth="1" />
-      {/* Bathtub */}
-      <rect x="150" y="292" width="88" height="52" rx="9" fill="#A8D0EC" fillOpacity="0.6" stroke="#2060A0" strokeWidth="1.2" />
-      {/* Sink */}
-      <ellipse cx="110" cy="364" rx="20" ry="12" fill="#88C0E0" fillOpacity="0.65" stroke="#2060A0" strokeWidth="1" />
-      <text x="176" y="375" textAnchor="middle" fill="#204080" fontSize="10" fontWeight="700" fontFamily="'Heebo',Arial,sans-serif">חדר רחצה הורים</text>
-
-      {/* Parents balcony */}
-      <rect x="70" y="385" width="212" height="72" fill="#E8D0F8" fillOpacity="0.38" stroke="#7040A0" strokeWidth="1.5" strokeDasharray="6 3" />
-      {[82,100,118,136,154,172,190,208,224,242,260].map(bx=>(
-        <circle key={bx} cx={bx} cy={455} r={2.2} fill="#7040A0" fillOpacity="0.55" />
-      ))}
-      <text x="176" y="425" textAnchor="middle" fill="#6030A0" fontSize="10.5" fontWeight="700" fontFamily="'Heebo',Arial,sans-serif">מרפסת הורים</text>
-      <text x="176" y="440" textAnchor="middle" fill="#7040A0" fontSize="8.5" fontFamily="'Heebo',Arial,sans-serif">נוף לשדות</text>
-
-      {/* ── CORRIDOR / STAIRCASE — CENTER ── */}
-      <rect x="282" y="61" width="196" height="499" fill="url(#hall_u)" />
-      <rect x="282" y="61" width="196" height="499" fill="none" stroke={P.dark} strokeWidth="2.5" />
-
-      {/* SKYLIGHT */}
-      <rect x="296" y="74" width="168" height="120" rx="7" fill="#FFF5A0" fillOpacity="0.78" stroke="#C8A020" strokeWidth="2" strokeDasharray="7 3" />
-      {[0,45,90,135,180,225,270,315].map(a=>{
-        const r=a*Math.PI/180, cx=380, cy=134;
-        return <line key={a} x1={cx+Math.cos(r)*18} y1={cy+Math.sin(r)*18} x2={cx+Math.cos(r)*34} y2={cy+Math.sin(r)*34} stroke="#C8A020" strokeWidth="1.2" strokeOpacity="0.6" />;
-      })}
-      <circle cx="380" cy="134" r="14" fill="#FFE840" fillOpacity="0.6" />
-      <text x="380" y="127" textAnchor="middle" fill="#806000" fontSize="11" fontWeight="800" fontFamily="'Heebo',Arial,sans-serif">סקיילייט</text>
-      <text x="380" y="141" textAnchor="middle" fill="#806000" fontSize="9" fontFamily="'Heebo',Arial,sans-serif">אור טבעי</text>
-
-      {/* Staircase */}
-      <rect x="290" y="270" width="180" height="150" fill="#E8D8A8" fillOpacity="0.75" stroke={P.wood2} strokeWidth="1.5" />
-      {Array.from({length:9}).map((_,i)=>(
-        <rect key={i} x={290} y={270+i*16} width={180} height={5} fill={P.stone3} fillOpacity="0.5" />
-      ))}
-      <text x="380" y="352" textAnchor="middle" fill={P.wood1} fontSize="11" fontWeight="700" fontFamily="'Heebo',Arial,sans-serif">מדרגות</text>
-      <text x="380" y="366" textAnchor="middle" fill={P.wood2} fontSize="9" fontFamily="'Heebo',Arial,sans-serif">↑ ↓</text>
-
-      {/* Shared bath */}
-      <rect x="290" y="440" width="180" height="112" fill="url(#bath_u)" />
-      <rect x="290" y="440" width="180" height="112" fill="none" stroke="#2060A0" strokeWidth="1.8" />
-      <ellipse cx="338" cy="478" rx="22" ry="15" fill="#88C0E0" fillOpacity="0.6" stroke="#2060A0" strokeWidth="1" />
-      <rect x="370" y="454" width="44" height="35" rx="3" fill="#90C0E0" fillOpacity="0.55" stroke="#2060A0" strokeWidth="1" />
-      <rect x="420" y="450" width="42" height="65" rx="9" fill="#A8D0EC" fillOpacity="0.55" stroke="#2060A0" strokeWidth="1" />
-      <text x="380" y="536" textAnchor="middle" fill="#204080" fontSize="10" fontWeight="700" fontFamily="'Heebo',Arial,sans-serif">חדר רחצה ילדים</text>
-
-      <text x="380" y="230" textAnchor="middle" fill="#5A4010" fontSize="11" fontWeight="700" fontFamily="'Heebo',Arial,sans-serif">מסדרון</text>
-
-      {/* ── KIDS WING — RIGHT ── */}
-      {/* Kid room 1 */}
-      <rect x="478" y="61" width="218" height="230" fill="url(#kids1_u)" />
-      <rect x="478" y="61" width="218" height="230" fill="none" stroke="#107040" strokeWidth="2.5" />
-      {/* Bed */}
-      <rect x="494" y="80" width="100" height="72" rx="6" fill="#40A870" fillOpacity="0.38" />
-      <rect x="494" y="80" width="100" height="20" rx="5" fill="#208050" fillOpacity="0.48" />
-      {/* Desk */}
-      <rect x="602" y="84" width="68" height="44" rx="3" fill="#50A878" fillOpacity="0.3" />
-      <rect x="646" y="84" width="22" height="44" rx="2" fill="#30886A" fillOpacity="0.35" />  {/* monitor */}
-      {/* Window seat */}
-      <rect x="484" y="267" width="204" height="18" rx="4" fill="#60B888" fillOpacity="0.38" stroke="#107040" strokeWidth="1.5" strokeDasharray="5 3" />
-      <text x="487" y="278" fill="#107040" fontSize="8.5" fontFamily="'Heebo',Arial,sans-serif">מושב חלון</text>
-      <text x="587" y="238" textAnchor="middle" fill="#107040" fontSize="12" fontWeight="800" fontFamily="'Heebo',Arial,sans-serif">חדר ילד/ה א׳</text>
-      <text x="587" y="254" textAnchor="middle" fill="#207850" fontSize="9.5" fontFamily="'Heebo',Arial,sans-serif">~18 מ״ר</text>
-
-      {/* Kid room 2 */}
-      <rect x="478" y="291" width="218" height="269" fill="url(#kids2_u)" />
-      <rect x="478" y="291" width="218" height="269" fill="none" stroke="#104870" strokeWidth="2.5" />
-      {/* Bed */}
-      <rect x="494" y="310" width="100" height="70" rx="6" fill="#4080B0" fillOpacity="0.38" />
-      <rect x="494" y="310" width="100" height="20" rx="5" fill="#2060A0" fillOpacity="0.48" />
-      {/* Small balcony */}
-      <rect x="594" y="305" width="70" height="65" rx="3" fill="#88B8D8" fillOpacity="0.4" stroke="#104870" strokeWidth="1.5" strokeDasharray="5 3" />
-      {[600,614,628,642,654].map(bx=><circle key={bx} cx={bx} cy={368} r={2} fill="#104870" fillOpacity="0.5" />)}
-      <text x="629" y="340" textAnchor="middle" fill="#104870" fontSize="9" fontWeight="700" fontFamily="'Heebo',Arial,sans-serif">מרפסת</text>
-      {/* Reading nook */}
-      <rect x="484" y="420" width="58" height="90" rx="3" fill="#5888B0" fillOpacity="0.28" stroke="#104870" strokeWidth="1.2" />
-      {[0,1,2,3].map(i=><line key={i} x1={484} y1={434+i*18} x2={542} y2={434+i*18} stroke="#104870" strokeWidth="0.9" />)}
-      <text x="487" y="498" fill="#104870" fontSize="8.5" fontFamily="'Heebo',Arial,sans-serif">פינת קריאה</text>
-      {/* Sloped ceiling line */}
-      <path d={`M554,430 L686,340`} fill="none" stroke="#104870" strokeWidth="1.5" strokeDasharray="5 3" strokeOpacity="0.65" />
-      <text x="635" y="400" fill="#104870" fontSize="8.5" fontFamily="'Heebo',Arial,sans-serif" transform="rotate(-30,635,400)">תקרה משופעת + קורות עץ</text>
-      <text x="587" y="500" textAnchor="middle" fill="#104870" fontSize="12" fontWeight="800" fontFamily="'Heebo',Arial,sans-serif">חדר ילד/ה ב׳</text>
-      <text x="587" y="516" textAnchor="middle" fill="#206080" fontSize="9.5" fontFamily="'Heebo',Arial,sans-serif">~18 מ״ר</text>
-
-      {/* ── WING LABELS ── */}
-      {/* Parents bracket */}
-      <rect x="30" y="61" width="30" height="396" rx="3" fill="none" stroke="#7040A0" strokeWidth="2.2" />
-      <line x1="30" y1="61" x2="20" y2="61" stroke="#7040A0" strokeWidth="2.2" />
-      <line x1="30" y1="457" x2="20" y2="457" stroke="#7040A0" strokeWidth="2.2" />
-      <text x="20" y="260" textAnchor="middle" fill="#6030A0" fontSize="12" fontWeight="800" fontFamily="'Heebo',Arial,sans-serif" transform="rotate(-90,20,260)">אגף הורים</text>
-
-      {/* Kids bracket */}
-      <rect x="700" y="61" width="30" height="499" rx="3" fill="none" stroke="#107040" strokeWidth="2.2" />
-      <line x1="730" y1="61" x2="742" y2="61" stroke="#107040" strokeWidth="2.2" />
-      <line x1="730" y1="560" x2="742" y2="560" stroke="#107040" strokeWidth="2.2" />
-      <text x="746" y="310" textAnchor="middle" fill="#107040" fontSize="12" fontWeight="800" fontFamily="'Heebo',Arial,sans-serif" transform="rotate(90,746,310)">אגף ילדים</text>
-
+      {/* ── Scale bar + compass ── */}
+      <g transform="translate(720,460)">
+        <line x1="0" y1="0" x2="120" y2="0" stroke="white" strokeWidth="2"/>
+        <line x1="0" y1="-5" x2="0" y2="5" stroke="white" strokeWidth="2"/>
+        <line x1="60" y1="-3" x2="60" y2="3" stroke="white" strokeWidth="1.5"/>
+        <line x1="120" y1="-5" x2="120" y2="5" stroke="white" strokeWidth="2"/>
+        <text x="0"   y="16" fill="white" fontSize="10" textAnchor="middle">0</text>
+        <text x="60"  y="16" fill="white" fontSize="10" textAnchor="middle">3</text>
+        <text x="120" y="16" fill="white" fontSize="10" textAnchor="middle">6מ׳</text>
+      </g>
       {/* North arrow */}
-      <g transform="translate(700,34)">
-        <circle cx="0" cy="0" r="16" fill={P.dark} fillOpacity="0.85" />
-        <polygon points="0,-11 -5,7 0,4 5,7" fill="white" />
-        <text x="0" y="4.5" textAnchor="middle" fill={P.terracotta} fontSize="9" fontWeight="900" fontFamily="Arial,sans-serif">N</text>
+      <g transform="translate(55,460)">
+        <polygon points="0,-22 7,10 0,4 -7,10" fill="white" opacity="0.9"/>
+        <polygon points="0,4 7,10 0,-22" fill="rgba(255,255,255,0.3)"/>
+        <text x="0" y="24" fill="white" fontSize="11" textAnchor="middle" fontWeight="bold">N</text>
       </g>
 
-      <Label x={380} y={H-14} text="תוכנית קומה עליונה — מוצעת" w={228} />
+      {/* ── Wing labels ── */}
+      <text x="190" y="30" fill="#C0A0E8" fontSize="11" textAnchor="middle" fontWeight="700" letterSpacing="2">
+        אגף הורים
+      </text>
+      <text x="710" y="30" fill="#90C890" fontSize="11" textAnchor="middle" fontWeight="700" letterSpacing="2">
+        אגף ילדים
+      </text>
+      <line x1="80" y1="38" x2="300" y2="38" stroke="#C0A0E8" strokeWidth="1.5" opacity="0.6"/>
+      <line x1="600" y1="38" x2="820" y2="38" stroke="#90C890" strokeWidth="1.5" opacity="0.6"/>
+
+      {/* ── Outer walls ── */}
+      <rect x="72" y="52" width="756" height="338" fill="none" stroke="#C8C0A8" strokeWidth="8" rx="3"/>
+      <rect x="76" y="56" width="748" height="330" fill="none" stroke="rgba(200,192,168,0.2)" strokeWidth="2" rx="2"/>
+
+      {/* ── Room fills ── */}
+      {Object.entries(rooms).map(([key, r])=>(
+        <rect key={key} x={r.x} y={r.y} width={r.w} height={r.h} fill={r.fill} rx="1" opacity="0.82"/>
+      ))}
+
+      {/* ── Skylight special rendering ── */}
+      <rect x={390} y={135} width={120} height={80} fill="url(#gSky)" opacity="0.7" rx="2"/>
+      <rect x={390} y={135} width={120} height={80} fill="rgba(160,220,255,0.35)" rx="2"/>
+      {/* Skylight frame */}
+      {[0,1,2].map(i=>(
+        <line key={i} x1={390+i*40} y1={135} x2={390+i*40} y2={215}
+          stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"/>
+      ))}
+      <line x1={390} y1={175} x2={510} y2={175} stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"/>
+      <text x="450" y="180" fill="rgba(255,255,255,0.9)" fontSize="9" textAnchor="middle" fontWeight="700">
+        סקיילייט
+      </text>
+
+      {/* ── Interior walls ── */}
+      {/* Dividing wall between wings (corridor) */}
+      <line x1="300" y1="56" x2="300" y2="390" stroke="#C8C0A8" strokeWidth="6"/>
+      <line x1="600" y1="56" x2="600" y2="390" stroke="#C8C0A8" strokeWidth="6"/>
+      {/* Horizontal dividers */}
+      <line x1="76"  y1="250" x2="300" y2="250" stroke="#C8C0A8" strokeWidth="5"/>
+      <line x1="300" y1="230" x2="480" y2="230" stroke="#C8C0A8" strokeWidth="5"/>
+      <line x1="480" y1="120" x2="600" y2="120" stroke="#C8C0A8" strokeWidth="5"/>
+      <line x1="600" y1="230" x2="828" y2="230" stroke="#C8C0A8" strokeWidth="5"/>
+      <line x1="76"  y1="360" x2="300" y2="360" stroke="#C8C0A8" strokeWidth="5"/>
+      <line x1="480" y1="120" x2="480" y2="230" stroke="#C8C0A8" strokeWidth="5"/>
+      <line x1="210" y1="250" x2="210" y2="360" stroke="#C8C0A8" strokeWidth="4"/>
+
+      {/* ── Doors ── */}
+      {[
+        {x:160,y:250,w:50,open:"down"},
+        {x:300,y:148,w:52,open:"right"},
+        {x:548,y:120,w:52,open:"up"},
+        {x:600,y:148,w:52,open:"right"},
+        {x:660,y:230,w:50,open:"down"},
+      ].map((d,i)=>(
+        <g key={i}>
+          <line x1={d.x} y1={d.y} x2={d.x+d.w} y2={d.y}
+            stroke="#A8A090" strokeWidth="3"/>
+          <path d={d.open==="down"
+            ? `M${d.x},${d.y} A${d.w},${d.w} 0 0,1 ${d.x+d.w},${d.y+d.w}`
+            : d.open==="right"
+            ? `M${d.x+d.w},${d.y} A${d.w},${d.w} 0 0,0 ${d.x+d.w+d.w},${d.y}`
+            : `M${d.x},${d.y} A${d.w},${d.w} 0 0,0 ${d.x+d.w},${d.y-d.w}`}
+            fill="none" stroke="#A8A090" strokeWidth="1.2" strokeDasharray="4,2"/>
+        </g>
+      ))}
+
+      {/* ── Room labels ── */}
+      {Object.entries(rooms).filter(([k,r])=>r.label).map(([key, r])=>(
+        <g key={key}>
+          <text x={r.x+r.w/2} y={r.y+r.h/2-4} fill="rgba(10,5,2,0.85)" fontSize={key==="corridor"?9.5:10}
+            textAnchor="middle" fontWeight="700" fontFamily="Heebo,sans-serif">{r.label}</text>
+          {r.sublabel && <text x={r.x+r.w/2} y={r.y+r.h/2+11} fill="rgba(10,5,2,0.6)" fontSize="9"
+            textAnchor="middle" fontFamily="Heebo,sans-serif">{r.sublabel}</text>}
+        </g>
+      ))}
+
+      {/* ── Feature callouts ── */}
+      {[
+        {x:192,y:184,label:"מרפסת הורים",sub:"נוף שדות"},
+        {x:192,y:292,label:"אמבטיה + ארון",sub:"en-suite"},
+        {x:710,y:145,label:"מושב חלון",sub:""},
+        {x:710,y:295,label:"מרפסת קטנה",sub:""},
+      ].map((c,i)=>(
+        <g key={i}>
+          <circle cx={c.x} cy={c.y} r="14" fill="rgba(255,220,120,0.22)" stroke="rgba(255,200,80,0.6)" strokeWidth="1.5"/>
+          <text x={c.x} y={c.y+4} fill="rgba(255,230,150,0.9)" fontSize="8"
+            textAnchor="middle" fontWeight="700">{c.label}</text>
+        </g>
+      ))}
+
+      {/* ── Staircase hatching ── */}
+      {Array.from({length:8},(_, i)=>(
+        <line key={i} x1={308} y1={238+i*14} x2={472} y2={238+i*14}
+          stroke="rgba(220,190,140,0.5)" strokeWidth="1"/>
+      ))}
+      <text x="390" y="300" fill="rgba(220,190,140,0.8)" fontSize="9"
+        textAnchor="middle">גרם מדרגות</text>
+
+      {/* ── Title ── */}
+      <text x="450" y="420" fill="rgba(255,255,255,0.7)" fontSize="11"
+        textAnchor="middle" letterSpacing="3" fontFamily="Heebo,sans-serif">
+        תוכנית קומה א׳ — אחרי שינויים
+      </text>
     </svg>
   );
 }
 
-// ── App shell ────────────────────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   SLIDES DATA
+══════════════════════════════════════════════════════════════════════════ */
+const SLIDES = [
+  { id:"salon",  num:"01", tag:"קיר הסלון",     title:"פתוח לשדה",
+    desc:"קיר-זכוכית שלם על כל רוחב הסלון. כשהפאנלים נפתחים — הסלון והטרסה הופכים לחלל אחד.",
+    points:["6 פאנלי הזזה — כל הרוחב","המשכיות רצפה ללא מפתן","קורות עץ חשופות בתקרה","נוף שדות ישיר"],
+    Scene: SalonScene },
+  { id:"entry",  num:"02", tag:"כניסה + מדרגות", title:"אור לגובה שתי קומות",
+    desc:"לצד גרם המדרגות — חלון רצף מהרצפה עד גג הגמלון. האור שוטף פנימה בכל שעות היום.",
+    points:["חלון ~6מ׳ גובה לצד המדרגות","חלל כניסה פתוח לגובה שתי קומות","קיר אבן חם — חומרים טוסקניים","אור טבעי על כל גרם המדרגות"],
+    Scene: EntryScene },
+  { id:"west",   num:"03", tag:"חזית השדות",    title:"זכוכית מול הנוף",
+    desc:"מבחוץ — הבית נפתח לשדות בשורה שלמה של זכוכית. קורות עץ בולטות בקו הגג.",
+    points:["זכוכית על כל רוחב קומת הקרקע","קורות עץ חשופות בקו הגג","אבן מקומית בפינות","טרסה רחבה — המשך הסלון"],
+    Scene: WestScene },
+  { id:"tuscan", num:"04", tag:"שפה אדריכלית",  title:"טוסקנה על כל החזיתות",
+    desc:"האבן, הקשתות, קורות העץ — מהכניסה מתפשטים לכל ארבע החזיתות. הבית מספר סיפור אחד.",
+    points:["אבן מקומית + עיטורי פינות","חלונות קשתות בקומת קרקע","תריסי עץ על כל החלונות","גפנים וצמחייה שמחברת לאדמה"],
+    Scene: TuscanScene },
+  { id:"upper",  num:"05", tag:"קומה עליונה",   title:"אגפים, אור ואופי",
+    desc:"הורים בקצה אחד, ילדים בקצה השני. למסדרון — סקיילייט. לכל חדר משהו ייחודי.",
+    points:["סקיילייט מעל המסדרון","אגף הורים: en-suite + מרפסת לשדות","חדרי ילדים שווים: מושב חלון / מרפסת / פינת קריאה","תקרה משופעת עם קורות עץ"],
+    Scene: UpperScene },
+];
+
+/* ══════════════════════════════════════════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════════════════════════════════════════ */
 export default function VillaAfter() {
   const [active, setActive] = useState(0);
-  const slide = SLIDES[active];
+  const s = SLIDES[active];
+  const Scene = s.Scene;
 
   return (
-    <div dir="rtl" style={{ fontFamily:"'Heebo',Arial,sans-serif", background:"#0C0806", minHeight:"100vh", color:"#F5EDE0", display:"flex", flexDirection:"column" }}>
-
+    <div style={{
+      display:"flex", flexDirection:"column", height:"100dvh",
+      background:"#0A0604", color:"white",
+      fontFamily:"'Heebo','Inter',sans-serif", direction:"rtl", overflow:"hidden"
+    }}>
       {/* Header */}
-      <header style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 28px", borderBottom:"1px solid rgba(255,255,255,0.08)", background:"rgba(18,10,4,0.95)", backdropFilter:"blur(12px)", flexShrink:0 }}>
-        <div>
-          <div style={{ color:"#C4834A", fontSize:10, fontWeight:700, letterSpacing:".22em", textTransform:"uppercase", marginBottom:3 }}>
-            בריף אדריכלי — הבית שלנו בשדות
-          </div>
-          <div style={{ color:"rgba(255,255,255,0.45)", fontSize:12 }}>הדמיות חזון — מצב אחרי השינויים</div>
-        </div>
-        <div style={{ color:"rgba(255,255,255,0.25)", fontSize:11 }}>
-          {slide.num} / 05 &nbsp;·&nbsp; {slide.tag}
-        </div>
-      </header>
+      <div style={{
+        padding:"10px 18px", display:"flex", justifyContent:"space-between", alignItems:"center",
+        borderBottom:"1px solid rgba(255,255,255,0.06)", flexShrink:0,
+        background:"linear-gradient(to bottom,#120A04,#0A0604)"
+      }}>
+        <span style={{fontSize:11,letterSpacing:4,color:"rgba(255,255,255,0.3)",textTransform:"uppercase"}}>
+          הדמיית אחרי
+        </span>
+        <span style={{
+          fontSize:12,fontWeight:800,letterSpacing:3,
+          background:"linear-gradient(90deg,#D4A85A,#F0CC80)",
+          WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"
+        }}>
+          טוסקנה ישראל
+        </span>
+        <span style={{fontSize:11,letterSpacing:3,color:"rgba(255,255,255,0.25)"}}>וילה</span>
+      </div>
 
-      {/* Tab bar */}
-      <nav style={{ display:"flex", gap:5, padding:"10px 14px", background:"#120804", borderBottom:"1px solid rgba(255,255,255,0.06)", overflowX:"auto", flexShrink:0 }}>
-        {SLIDES.map((s,i)=>(
-          <button key={s.id} onClick={()=>setActive(i)} style={{
-            background: active===i ? "#B5472A" : "rgba(255,255,255,0.05)",
-            border:`1px solid ${active===i?"#B5472A":"rgba(255,255,255,0.1)"}`,
-            borderRadius:10, padding:"8px 16px",
-            cursor:"pointer", flexShrink:0, textAlign:"right",
+      {/* Tab nav */}
+      <nav style={{
+        display:"flex", gap:4, padding:"8px 12px",
+        background:"#0D0804", borderBottom:"1px solid rgba(255,255,255,0.05)",
+        overflowX:"auto", flexShrink:0
+      }}>
+        {SLIDES.map((sl,i)=>(
+          <button key={sl.id} onClick={()=>setActive(i)} style={{
+            display:"flex", flexDirection:"column", alignItems:"center",
+            padding:"6px 14px", borderRadius:6, border:"none", cursor:"pointer",
+            background: active===i
+              ? "linear-gradient(135deg,rgba(180,130,60,0.28),rgba(220,170,80,0.18))"
+              : "transparent",
+            borderBottom: active===i ? "2px solid #C8A04A" : "2px solid transparent",
+            transition:"all .2s"
           }}>
-            <div style={{ color:active===i?"rgba(255,255,255,0.6)":"rgba(255,255,255,0.25)", fontSize:9, fontWeight:700, letterSpacing:".1em", marginBottom:2 }}>{s.num}</div>
-            <div style={{ color:active===i?"#fff":"rgba(255,255,255,0.5)", fontSize:12, fontWeight:700, whiteSpace:"nowrap" }}>{s.tag}</div>
+            <span style={{fontSize:9,color:active===i?"#C8A04A":"rgba(255,255,255,0.3)",
+              letterSpacing:2,fontWeight:700}}>{sl.num}</span>
+            <span style={{fontSize:10,color:active===i?"#F0D080":"rgba(255,255,255,0.45)",
+              fontWeight:600,whiteSpace:"nowrap",marginTop:1}}>{sl.tag}</span>
           </button>
         ))}
       </nav>
 
-      {/* Content */}
-      <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
-        {/* Description strip */}
-        <div style={{ padding:"16px 28px 12px", background:"rgba(12,8,6,0.9)", borderBottom:"1px solid rgba(255,255,255,0.06)", flexShrink:0 }}>
-          <h2 style={{ fontSize:"clamp(18px,3vw,26px)", fontWeight:900, margin:"0 0 6px", color:"#fff" }}>{slide.title}</h2>
-          <p style={{ fontSize:13.5, color:"rgba(255,255,255,0.6)", margin:"0 0 10px", lineHeight:1.75, fontWeight:300 }}>{slide.desc}</p>
-          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-            {slide.points.map((p,i)=>(
-              <div key={i} style={{ display:"inline-flex", alignItems:"center", gap:7, background:"rgba(181,71,42,0.18)", border:"1px solid rgba(181,71,42,0.35)", borderRadius:100, padding:"4px 12px" }}>
-                <div style={{ width:5,height:5,borderRadius:"50%",background:"#C4834A",flexShrink:0 }} />
-                <span style={{ fontSize:11.5, color:"rgba(255,255,255,0.72)", fontWeight:500 }}>{p}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Scene */}
+      <div style={{flex:1, position:"relative", overflow:"hidden", minHeight:0}}>
+        <Scene/>
+      </div>
 
-        {/* SVG scene */}
-        <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px", background:"#0C0806", overflow:"hidden" }}>
-          <div style={{ width:"100%", maxWidth:920, borderRadius:16, overflow:"hidden", boxShadow:"0 16px 60px rgba(0,0,0,0.6)", border:"1px solid rgba(255,255,255,0.06)" }}>
-            <slide.Scene />
-          </div>
+      {/* Description strip */}
+      <div style={{
+        padding:"10px 20px 6px", background:"#0D0804",
+        borderTop:"1px solid rgba(255,255,255,0.06)", flexShrink:0
+      }}>
+        <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:4}}>
+          <span style={{
+            fontSize:14,fontWeight:800,letterSpacing:1,
+            background:"linear-gradient(90deg,#E0B860,#F8D888)",
+            WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"
+          }}>{s.title}</span>
+          <span style={{fontSize:10,color:"rgba(255,255,255,0.28)",letterSpacing:2}}>{s.tag}</span>
         </div>
+        <p style={{fontSize:11,color:"rgba(255,255,255,0.55)",margin:"0 0 6px",lineHeight:1.5}}>{s.desc}</p>
+        <div style={{display:"flex",flexWrap:"wrap",gap:"4px 10px"}}>
+          {s.points.map((p,i)=>(
+            <span key={i} style={{
+              fontSize:10,color:"rgba(200,165,80,0.85)",
+              display:"flex",alignItems:"center",gap:4
+            }}>
+              <span style={{color:"#C8A04A",fontSize:8}}>◆</span>{p}
+            </span>
+          ))}
+        </div>
+      </div>
 
-        {/* Prev/Next */}
-        <div style={{ display:"flex", justifyContent:"space-between", padding:"12px 28px", borderTop:"1px solid rgba(255,255,255,0.06)", background:"rgba(12,8,6,0.9)", flexShrink:0 }}>
-          <button onClick={()=>setActive((active-1+SLIDES.length)%SLIDES.length)}
-            style={{ background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, padding:"8px 20px", color:"rgba(255,255,255,0.6)", cursor:"pointer", fontSize:13, fontWeight:600 }}>
-            → הקודם
-          </button>
-          <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-            {SLIDES.map((_,i)=>(
-              <div key={i} onClick={()=>setActive(i)} style={{ width:active===i?22:6, height:6, borderRadius:3, background:active===i?"#C4834A":"rgba(255,255,255,0.2)", cursor:"pointer", transition:"all .25s" }} />
-            ))}
-          </div>
-          <button onClick={()=>setActive((active+1)%SLIDES.length)}
-            style={{ background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:10, padding:"8px 20px", color:"rgba(255,255,255,0.6)", cursor:"pointer", fontSize:13, fontWeight:600 }}>
-            הבא ←
-          </button>
+      {/* Prev / Next */}
+      <div style={{
+        display:"flex",justifyContent:"space-between",alignItems:"center",
+        padding:"6px 18px 10px", background:"#0A0604", flexShrink:0
+      }}>
+        <button onClick={()=>setActive((active-1+SLIDES.length)%SLIDES.length)}
+          style={{background:"rgba(255,255,255,0.06)",border:"none",color:"rgba(255,255,255,0.5)",
+            padding:"5px 16px",borderRadius:5,cursor:"pointer",fontSize:13}}>→</button>
+        <div style={{display:"flex",gap:6}}>
+          {SLIDES.map((_,i)=>(
+            <div key={i} onClick={()=>setActive(i)} style={{
+              width:active===i?20:6, height:6, borderRadius:3,
+              background:active===i?"#C8A04A":"rgba(255,255,255,0.18)",
+              cursor:"pointer",transition:"all .25s"
+            }}/>
+          ))}
         </div>
+        <button onClick={()=>setActive((active+1)%SLIDES.length)}
+          style={{background:"rgba(255,255,255,0.06)",border:"none",color:"rgba(255,255,255,0.5)",
+            padding:"5px 16px",borderRadius:5,cursor:"pointer",fontSize:13}}>←</button>
       </div>
     </div>
   );
