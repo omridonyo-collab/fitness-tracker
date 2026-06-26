@@ -1,6 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&family=Inter:wght@400;700;900&display=swap');
 @import "tailwindcss";
 
+/* Villa brief — responsive grid collapse on mobile */
+@media (max-width: 600px) {
+  .villa-two-col {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* ============================================
    FitTracker 30 — Custom Design System
    ============================================ */
