@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>מחשבון יד</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap">
+<style>
+/* Layout: one phone screen, inputs top to bottom in the order you decide, verdict pinned to the bottom */
+:root{
+  --felt:#0f2a22; --felt-2:#153a2f; --line:#23503f; --chalk:#e8efe9; --muted:#8fb3a4;
+  --gold:#e3b54a; --call:#3fc27a; --warn:#e89a3c; --fold:#e0574f;
+  --font:"Rubik",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--felt);color:var(--chalk);font-family:var(--font);font-size:15px;margin:0;
+  padding-inline:16px;padding-block:12px 150px;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.lbl{font-size:12px;color:var(--muted);letter-spacing:.02em;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button,.ranks button{flex:1 1 0;min-width:0;background:var(--felt-2);color:var(--chalk);border:1px solid var(--line);
+  border-radius:8px;font:500 15px var(--font);padding:11px 4px;cursor:pointer;touch-action:manipulation}
+.seg button[aria-pressed="true"],.ranks button[aria-pressed="true"]{background:var(--chalk);color:var(--felt);border-color:var(--chalk)}
+.seg button:focus-visible,.ranks button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.ranks{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.ranks button{font:700 17px var(--font);padding:10px 0;direction:ltr}
+.hand{display:flex;align-items:center;gap:10px}
+.cards{display:flex;gap:6px;direction:ltr}
+.card{width:42px;height:56px;border-radius:6px;background:var(--chalk);color:var(--felt);display:grid;place-items:center;font:700 20px var(--font)}
+.card.empty{background:transparent;border:1px dashed var(--line);color:var(--muted)}
+.hand .seg{flex:1}
+.nums{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.nums input{width:100%;background:var(--felt-2);color:var(--chalk);border:1px solid var(--line);border-radius:8px;
+  font:500 22px var(--font);padding:9px 10px;direction:ltr;text-align:center;font-variant-numeric:tabular-nums}
+.verdict{position:fixed;inset-inline:0;bottom:0;background:var(--felt-2);border-top:1px solid var(--line);
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
+.verdict .in{max-width:460px;margin:0 auto;display:flex;align-items:center;gap:14px}
+.word{font:700 30px var(--font);min-width:96px;text-align:center;padding:8px 10px;border-radius:10px;color:var(--felt)}
+.word.raise{background:var(--gold)} .word.call{background:var(--call)} .word.warn{background:var(--warn)} .word.fold{background:var(--fold)}
+.stats{display:flex;flex-direction:column;gap:3px;min-width:0}
+.stats b{font-variant-numeric:tabular-nums;unicode-bidi:isolate;direction:ltr;display:inline-block}
+.why{font-size:12.5px;color:var(--muted)}
+.note{font-size:11.5px;color:var(--muted);line-height:1.5}
+@media (prefers-reduced-motion:no-preference){.word{transition:background .15s}}
+</style>
+</head>
+<body>
+
+<div class="wrap" dir="rtl">
+  <section>
+    <div class="lbl">שלב</div>
+    <div class="seg" data-k="street">
+      <button data-v="pre">פרה-פלופ</button><button data-v="flop">פלופ</button><button data-v="turn">טרן</button><button data-v="river">ריבר</button>
+    </div>
+  </section>
+
+  <div id="pre" class="wrap" style="gap:12px">
+    <section>
+      <div class="lbl"><span>הקלפים שלך (שתי לחיצות)</span></div>
+      <div class="hand">
+        <div class="cards"><div class="card" id="c1"></div><div class="card" id="c2"></div></div>
+        <div class="seg" data-k="suited"><button data-v="0">צבע שונה</button><button data-v="1">אותו צבע</button></div>
+      </div>
+    </section>
+    <div class="ranks" id="ranks"></div>
+    <section>
+      <div class="lbl">העמדה שלך</div>
+      <div class="seg" data-k="pos">
+        <button data-v="early">מוקדמת</button><button data-v="mid">אמצע</button><button data-v="late">מאוחרת</button><button data-v="blind">בליינד</button>
+      </div>
+    </section>
+    <section>
+      <div class="lbl">מה קרה לפניך</div>
+      <div class="seg" data-k="facing">
+        <button data-v="none">בלי העלאה</button><button data-v="raise">העלאה</button><button data-v="3bet">העלאה חוזרת</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="post" class="wrap" style="gap:12px" hidden>
+    <section>
+      <div class="lbl">מה יש לך</div>
+      <div class="seg" data-k="made">
+        <button data-v="none">כלום</button><button data-v="weak">זוג חלש</button><button data-v="top">זוג עליון</button>
+        <button data-v="strong">אוברפייר / 2 זוגות</button><button data-v="monster">שלישייה ומעלה</button>
+      </div>
+    </section>
+    <section>
+      <div class="lbl">מה חסר לך (דרו)</div>
+      <div class="seg" data-k="draw">
+        <button data-v="0">אין</button><button data-v="4">סטרייט מבפנים</button><button data-v="6">2 קלפים גבוהים</button>
+        <button data-v="8">סטרייט פתוח</button><button data-v="9">צבע</button><button data-v="15">צבע + סטרייט</button>
+      </div>
+    </section>
+  </div>
+
+  <section>
+    <div class="lbl">כמה יריבים יישארו ביד</div>
+    <div class="seg" data-k="opp">
+      <button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button><button data-v="6">6+</button>
+    </div>
+  </section>
+
+  <section class="nums">
+    <label><div class="lbl">בקופה עכשיו</div><input id="pot" inputmode="decimal" autocomplete="off"></label>
+    <label><div class="lbl">עליך לשלם</div><input id="call" inputmode="decimal" autocomplete="off"></label>
+  </section>
+
+  <p class="note">הקופה כוללת את כל ההימורים שכבר על השולחן, כולל זה שאתה צריך להשוות. הסיכוי מחושב בהדמיה של אלפי ידיים מול טווח ידיים סביר לפי מה שקרה לפניך. אחרי הפלופ זו הערכה לפי סוג היד ומספר ה-outs.</p>
+</div>
+
+<div class="verdict" dir="rtl">
+  <div class="in">
+    <div class="word" id="word">…</div>
+    <div class="stats">
+      <div>סיכוי לנצח <b id="eq">–</b> · צריך <b id="req">–</b></div>
+      <div class="why" id="why"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const RL=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+const S={street:'pre',ranks:[11,10],suited:'0',pos:'mid',facing:'raise',opp:'3',made:'top',draw:'0'};
+const $=id=>document.getElementById(id);
+$('pot').value=165; $('call').value=50;
+
+/* ---------- 7-card evaluator ---------- */
+const rc=new Uint8Array(13),sc=new Uint8Array(4),sm=new Uint16Array(4);
+function sHi(m){for(let h=12;h>=4;h--)if(((m>>(h-4))&31)===31)return h;return (m&0x100F)===0x100F?3:-1}
+function top(m,n,skip1,skip2){let v=0,k=0;for(let r=12;r>=0&&k<n;r--)if((m>>r)&1&&r!==skip1&&r!==skip2){v=(v<<4)|r;k++}return v}
+function ev(c){
+  rc.fill(0);sc.fill(0);sm.fill(0);let rm=0;
+  for(let i=0;i<7;i++){const r=c[i]>>2,s=c[i]&3;rc[r]++;sc[s]++;sm[s]|=1<<r;rm|=1<<r}
+  for(let s=0;s<4;s++)if(sc[s]>=5){const h=sHi(sm[s]);return h>=0?(8<<20)|h:(5<<20)|top(sm[s],5)}
+  let q=-1,t1=-1,t2=-1,p1=-1,p2=-1;
+  for(let r=12;r>=0;r--){const n=rc[r];
+    if(n===4)q=r;else if(n===3){if(t1<0)t1=r;else if(t2<0)t2=r}
+    else if(n===2){if(p1<0)p1=r;else if(p2<0)p2=r}}
+  if(q>=0)return (7<<20)|(q<<4)|top(rm,1,q);
+  if(t1>=0&&(t2>=0||p1>=0))return (6<<20)|(t1<<4)|Math.max(t2,p1);
+  const st=sHi(rm);if(st>=0)return (4<<20)|st;
+  if(t1>=0)return (3<<20)|(t1<<8)|top(rm,2,t1);
+  if(p2>=0)return (2<<20)|(p1<<8)|(p2<<4)|top(rm,1,p1,p2);
+  if(p1>=0)return (1<<20)|(p1<<12)|top(rm,3,p1);
+  return top(rm,5);
+}
+
+/* ---------- starting-hand ranking (Chen formula) ---------- */
+function chen(h,l,su){
+  const pts=[1,1.5,2,2.5,3,3.5,4,4.5,5,6,7,8,10][h];
+  if(h===l)return Math.max(5,pts*2)+h*.01;
+  let s=pts+(su?2:0);const g=h-l-1;s-=[0,1,2,4][g]??5;
+  if(g<=1&&h<10)s+=1;return Math.ceil(s)+h*.01+l*.001;
+}
+const CL=[];
+for(let h=12;h>=0;h--)for(let l=h;l>=0;l--){
+  if(h===l)CL.push({h,l,su:0,n:6});else{CL.push({h,l,su:1,n:4});CL.push({h,l,su:0,n:12})}}
+CL.forEach(c=>c.sc=chen(c.h,c.l,c.su));CL.sort((a,b)=>b.sc-a.sc);
+let cum=0;CL.forEach(c=>{cum+=c.n;c.pct=cum/1326});
+function combos(c){const o=[];
+  for(let a=0;a<4;a++)for(let b=0;b<4;b++){
+    if(c.h===c.l){if(b>a)o.push(c.h*4+a,c.l*4+b)}
+    else if(c.su?a===b:a!==b)o.push(c.h*4+a,c.l*4+b)}return o}
+const rangeCache={};
+function range(p){if(rangeCache[p])return rangeCache[p];const o=[];
+  for(const c of CL){o.push(...combos(c));if(c.pct>=p)break}return rangeCache[p]=Int8Array.from(o)}
+function classOf(h,l,su){if(h<l)[h,l]=[l,h];return CL.find(c=>c.h===h&&c.l===l&&(h===l||c.su===su))}
+
+/* ---------- Monte Carlo ---------- */
+function mc(h0,h1,ranges,iters){
+  const used=new Uint8Array(52),c=new Int8Array(7),oc=new Int8Array(14);let win=0;
+  const rnd=()=>{let x;do x=(Math.random()*52)|0;while(used[x]);used[x]=1;return x};
+  for(let it=0;it<iters;it++){
+    used.fill(0);used[h0]=used[h1]=1;
+    for(let j=0;j<ranges.length;j++){const R=ranges[j];let ok=false;
+      if(R)for(let t=0;t<40;t++){const i=((Math.random()*(R.length>>1))|0)*2,a=R[i],b=R[i+1];
+        if(!used[a]&&!used[b]){used[a]=used[b]=1;oc[j*2]=a;oc[j*2+1]=b;ok=true;break}}
+      if(!ok){oc[j*2]=rnd();oc[j*2+1]=rnd()}}
+    for(let k=2;k<7;k++)c[k]=rnd();
+    c[0]=h0;c[1]=h1;const me=ev(c);let best=0,ties=0;
+    for(let j=0;j<ranges.length;j++){c[0]=oc[j*2];c[1]=oc[j*2+1];const v=ev(c);
+      if(v>best){best=v;ties=1}else if(v===best)ties++}
+    if(me>best)win++;else if(me===best)win+=1/(ties+1);
+  }
+  return win/iters;
+}
+
+/* ---------- decisions ---------- */
+const OPEN={early:.12,mid:.17,late:.28,blind:.22};
+const POSN={early:'מעמדה מוקדמת',mid:'מעמדה אמצעית',late:'מעמדה מאוחרת',blind:'מהבליינד'};
+const pct=x=>Math.round(x*100)+'%';
+function decide(){
+  const pot=+$('pot').value||0,call=+$('call').value||0,n=+S.opp;
+  let req=call>0?call/(pot+call):0,eq,why='',word;
+  if(S.street==='pre'){
+    const [a,b]=S.ranks;if(b==null)return show('…','–','–','בחר שני קלפים');
+    const su=a!==b&&S.suited==='1';
+    const h0=a*4,h1=b*4+(su?0:1);
+    const cls=classOf(a,b,su?1:0),hp=cls.pct;
+    const R=[];for(let j=0;j<n;j++)R.push(range(
+      S.facing==='none'?.55:S.facing==='raise'?(j===0?.18:.35):(j===0?.06:j===1?.15:.3)));
+    eq=mc(h0,h1,R,10000);
+    const spec=(a===b&&a<=8)||(su&&Math.abs(a-b)<=3);
+    let imp=0;if(spec&&n>=2&&call<=pot*.35){imp=.04}
+    const m=eq-(req-imp);
+    why=`היד שלך בטופ ${pct(hp)} מהידיים`;
+    if(call===0){word=hp<=OPEN[S.pos]?'raise':'call';
+      why+=word==='raise'?` · בטווח פתיחה ${POSN[S.pos]}`:' · תעשה צ׳ק';}
+    else if(S.facing==='3bet'&&hp<=.026){word='raise';why+=' · יד פרימיום, העלה שוב'}
+    else if(S.facing==='raise'&&hp<=.045){word='raise';why+=' · יד חזקה מספיק להעלאה חוזרת'}
+    else if(S.facing==='none'&&hp<=OPEN[S.pos]){word='raise';why+=' · העלה ובודד את מי שנכנס'}
+    else{word=m>=.02?'call':m>=-.03?'warn':'fold';
+      if(imp)why+=' · יד ספקולטיבית, אם תפגע הקופה תגדל'}
+  }else{
+    const base={none:.12,weak:.38,top:.62,strong:.78,monster:.92}[S.made];
+    const made=Math.pow(base,1+.6*(n-1));
+    const o=+S.draw;let dr=0;
+    if(S.street==='flop')dr=1-((47-o)/47)*((46-o)/46);else if(S.street==='turn')dr=o/46;
+    dr*=Math.pow(.95,n-1);
+    eq=S.made==='monster'?made:made+(1-made)*dr;
+    const imp=o&&S.street!=='river'?.03:0,m=eq-(req-imp);
+    if(o&&S.street!=='river')why=`${o} outs · ~${pct(dr)} להשלים`;
+    if(S.street==='river'&&o)why='הדרו לא נכנס, נשאר רק מה שיש לך';
+    if(call===0){word=eq>=.55?'raise':'call';why=(word==='raise'?'הימור של חצי עד שני שליש קופה':'צ׳ק')+(why?' · '+why:'')}
+    else if((S.made==='strong'||S.made==='monster')&&eq>=req+.2){word='raise';why='יד חזקה, תעלה'+(why?' · '+why:'')}
+    else word=m>=.02?'call':m>=-.03?'warn':'fold';
+  }
+  const W={raise:call===0&&S.street!=='pre'?'הימור':'העלאה',call:call===0?'צ׳ק':'שלם',warn:'גבולי',fold:'קפל'}[word];
+  show(W,pct(eq),call>0?pct(req):'0%',why,word);
+}
+function show(w,e,r,why,cls){const el=$('word');el.textContent=w;el.className='word '+(cls||'');
+  $('eq').textContent=e;$('req').textContent=r;$('why').textContent=why}
+
+/* ---------- UI ---------- */
+const rk=$('ranks');
+[12,11,10,9,8,7,6,5,4,3,2,1,0].forEach(r=>{const b=document.createElement('button');b.textContent=RL[r];b.dataset.r=r;rk.appendChild(b)});
+rk.addEventListener('click',e=>{const r=+e.target.dataset.r;if(isNaN(r))return;
+  S.ranks=S.ranks.length===1?[S.ranks[0],r].sort((x,y)=>y-x):[r];render()});
+document.querySelectorAll('.seg').forEach(g=>g.addEventListener('click',e=>{
+  const v=e.target.dataset.v;if(v==null)return;S[g.dataset.k]=v;render()}));
+['pot','call'].forEach(id=>$(id).addEventListener('input',schedule));
+let tm;function schedule(){clearTimeout(tm);tm=setTimeout(decide,40)}
+function render(){
+  document.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button').forEach(b=>
+    b.setAttribute('aria-pressed',String(S[g.dataset.k]===b.dataset.v))));
+  const [a,b]=S.ranks;
+  $('c1').textContent=a!=null?RL[a]:'';$('c1').className='card'+(a==null?' empty':'');
+  $('c2').textContent=b!=null?RL[b]:'';$('c2').className='card'+(b==null?' empty':'');
+  rk.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(S.ranks.includes(+x.dataset.r))));
+  document.querySelector('[data-k="suited"]').style.opacity=a!=null&&a===b?.35:1;
+  $('pre').hidden=S.street!=='pre';$('post').hidden=S.street==='pre';
+  schedule();
+}
+render();
+</script>
+</body>
+</html>
